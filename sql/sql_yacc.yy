@@ -6472,11 +6472,11 @@ old_or_new_charset_name_or_default:
 collation_name:
           ident_or_text
           {
-            CHARSET_INFO *cs;
-            if (unlikely(!(cs= mysqld_collation_get_by_name($1.str,
-                                                            thd->get_utf8_flag()))))
+            bool error;
+            $$= Lex_extended_collation::find_by_name(&error, $1.str,
+                                                     thd->get_utf8_flag());
+            if (unlikely(error))
               MYSQL_YYABORT;
-            $$= Lex_extended_collation(Lex_exact_collation(cs));
           }
         ;
 
@@ -9736,8 +9736,7 @@ string_factor_expr:
         | string_factor_expr COLLATE_SYM collation_name
           {
             if (unlikely(!($$= new (thd->mem_root)
-                               Item_func_set_collation(thd, $1,
-                                                       $3.charset_info()))))
+                               Item_func_set_collation(thd, $1, $3))))
               MYSQL_YYABORT;
           }
         ;

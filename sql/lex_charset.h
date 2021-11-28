@@ -96,6 +96,15 @@ public:
     return m_ci == &my_collation_contextually_typed_binary;
   }
   bool raise_if_not_equal(const Lex_context_collation &cl) const;
+  /*
+    Skip the character set prefix, return the suffix.
+      utf8mb4_uca1400_as_ci -> uca1400_as_ci
+  */
+  LEX_CSTRING collation_name_context_suffix() const
+  {
+    return m_ci->get_collation_name(MY_COLLATION_NAME_MODE_CONTEXT);
+  }
+  LEX_CSTRING collation_name_for_show() const;
 };
 
 
@@ -141,6 +150,9 @@ protected:
   CHARSET_INFO *m_ci;
   Type m_type;
 public:
+  static Lex_extended_collation_st find_by_name(bool *error, const char *name,
+                                                myf utf8flag);
+public:
   void init(CHARSET_INFO *ci, Type type)
   {
     m_ci= ci;
@@ -148,6 +160,17 @@ public:
   }
   CHARSET_INFO *charset_info() const { return m_ci; }
   Type type() const { return m_type; }
+  LEX_CSTRING collation_name_for_show() const
+  {
+    switch (m_type) {
+    case TYPE_CONTEXTUALLY_TYPED:
+      return Lex_context_collation(m_ci).collation_name_for_show();
+    case TYPE_EXACT:
+      return m_ci->coll_name;
+    }
+    DBUG_ASSERT(0);
+    return m_ci->coll_name;
+  }
   void set_collate_default()
   {
     m_ci= &my_collation_contextually_typed_default;
@@ -171,6 +194,10 @@ public:
   Lex_extended_collation(const Lex_exact_collation &rhs)
   {
     init(rhs.charset_info(), TYPE_EXACT);
+  }
+  Lex_extended_collation(const Lex_context_collation &rhs)
+  {
+    init(rhs.charset_info(), TYPE_CONTEXTUALLY_TYPED);
   }
 };
 
@@ -221,6 +248,19 @@ public:
     DBUG_ASSERT(0);
     return false;
   }
+  bool merge_collation_override(const Lex_extended_collation_st &cl)
+  {
+    switch (cl.type()) {
+    case Lex_extended_collation_st::TYPE_EXACT:
+      return merge_exact_collation_override(
+        Lex_exact_collation(cl.charset_info()));
+    case Lex_extended_collation_st::TYPE_CONTEXTUALLY_TYPED:
+      return merge_context_collation_override(
+        Lex_context_collation(cl.charset_info()));
+    }
+    DBUG_ASSERT(0);
+    return false;
+  }
   /*
     Add a context collation:
       CHARACTER SET cs [COLLATE cl] ... COLLATE DEFAULT
@@ -232,6 +272,7 @@ public:
       CHARACTER SET cs [COLLATE cl] ... COLLATE latin1_bin
   */
   bool merge_exact_collation(const Lex_exact_collation &cl);
+  bool merge_exact_collation_override(const Lex_exact_collation &cl);
   Lex_exact_collation collation() const
   {
     return Lex_exact_collation(m_ci);
@@ -410,6 +451,7 @@ public:
     case TYPE_COLLATE_EXACT:
       return merge_exact_collation(Lex_exact_collation(cl.charset_info()));
     case TYPE_COLLATE_CONTEXTUALLY_TYPED:
+      return merge_context_collation(Lex_context_collation(cl.charset_info()));
     case TYPE_CHARACTER_SET:
     case TYPE_CHARACTER_SET_COLLATE_EXACT:
       break;
@@ -426,7 +468,6 @@ public:
   bool merge_column_collate_clause_and_collate_clause(
                     const Lex_exact_charset_extended_collation_attrs_st &cl)
   {
-    DBUG_ASSERT(m_type != TYPE_COLLATE_CONTEXTUALLY_TYPED);
     DBUG_ASSERT(m_type != TYPE_CHARACTER_SET);
     switch (cl.type()) {
     case TYPE_EMPTY:
@@ -434,6 +475,7 @@ public:
     case TYPE_COLLATE_EXACT:
       return merge_exact_collation(Lex_exact_collation(cl.charset_info()));
     case TYPE_COLLATE_CONTEXTUALLY_TYPED:
+      return merge_context_collation(Lex_context_collation(cl.charset_info()));
     case TYPE_CHARACTER_SET:
     case TYPE_CHARACTER_SET_COLLATE_EXACT:
       break;
