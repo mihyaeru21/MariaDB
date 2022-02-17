@@ -2885,6 +2885,7 @@ private:
   enum enum_table_ref_type m_table_ref_type;
   /** See comments for set_table_ref_id() */
   ulong m_table_ref_version;
+  bool m_is_derived_eliminated= false;
 };
 
 class Item;
