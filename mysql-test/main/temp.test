@@ -1,0 +1,6 @@
+SET @schema_array= '{"type":"array",
+                     "maxItems": 4,
+                     "minItems": 2,
+                     "const": "[1, 2, 3, 4]"}';
+SELECT JSON_SCHEMA_VALID(@schema_array, '[1, 2, 3, "foobar"]');
+SELECT JSON_SCHEMA_VALID(@schema_array, '[1, 2, 3, 4]');
