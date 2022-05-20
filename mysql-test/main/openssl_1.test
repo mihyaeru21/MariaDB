@@ -118,7 +118,7 @@ drop table t1;
 # verification of servers certificate by setting both ca certificate
 # and ca path to NULL
 #
---exec $MYSQL --ssl --ssl-key=$MYSQL_TEST_DIR/std_data/client-key.pem --ssl-cert=$MYSQL_TEST_DIR/std_data/client-cert.pem -e "SELECT VARIABLE_VALUE <> '' AS have_ssl FROM INFORMATION_SCHEMA.SESSION_STATUS WHERE VARIABLE_NAME='Ssl_cipher'" 2>&1
+--exec $MYSQL --ssl-verify-server-cert=0 --ssl --ssl-key=$MYSQL_TEST_DIR/std_data/client-key.pem --ssl-cert=$MYSQL_TEST_DIR/std_data/client-cert.pem -e "SELECT VARIABLE_VALUE <> '' AS have_ssl FROM INFORMATION_SCHEMA.SESSION_STATUS WHERE VARIABLE_NAME='Ssl_cipher'" 2>&1
 --echo End of 5.0 tests
 
 #
@@ -167,7 +167,7 @@ CREATE TABLE t1(a int);
 INSERT INTO t1 VALUES (1), (2);
 
 # Run mysqldump
---exec $MYSQL_DUMP --default-character-set=utf8mb4 --skip-create-options --skip-comments --ssl-key=$MYSQL_TEST_DIR/std_data/client-key.pem --ssl-cert=$MYSQL_TEST_DIR/std_data/client-cert.pem test t1
+--exec $MYSQL_DUMP --ssl-verify-server-cert=0 --default-character-set=utf8mb4 --skip-create-options --skip-comments --ssl-key=$MYSQL_TEST_DIR/std_data/client-key.pem --ssl-cert=$MYSQL_TEST_DIR/std_data/client-cert.pem test t1
 
 --exec $MYSQL_DUMP --default-character-set=utf8mb4 --skip-create-options --skip-comments --ssl-ca=$MYSQL_TEST_DIR/std_data/cacert.pem --ssl-key=$MYSQL_TEST_DIR/std_data/client-key.pem --ssl-cert=$MYSQL_TEST_DIR/std_data/client-cert.pem test
 

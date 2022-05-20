@@ -33,6 +33,7 @@ SSL_STATIC char *opt_ssl_crlpath = 0;
 SSL_STATIC char *opt_tls_version = 0;
 #ifdef MYSQL_CLIENT
 SSL_STATIC my_bool opt_ssl_verify_server_cert= 0;
+SSL_STATIC my_bool opt_ssl_verify_server_cert_auto= 1;
 #endif
 #endif
 #endif /* SSLOPT_VARS_INCLUDED */

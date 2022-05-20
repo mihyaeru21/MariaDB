@@ -210,7 +210,7 @@ static char*	log_ignored_opt;
 
 extern my_bool opt_use_ssl;
 extern char *opt_tls_version;
-my_bool opt_ssl_verify_server_cert;
+my_bool opt_ssl_verify_server_cert, opt_ssl_verify_server_cert_auto= 1;
 my_bool opt_extended_validation;
 my_bool opt_encrypted_backup;
 

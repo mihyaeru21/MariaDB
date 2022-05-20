@@ -29,16 +29,29 @@
       One can disable SSL later by using --skip-ssl or --ssl=0
     */
       opt_use_ssl= 1;
-#if defined (HAVE_WOLFSSL)
+#ifdef MYSQL_CLIENT
+      /* fallthrough */
+    case OPT_SSL_SSL:
+      if (opt_ssl_verify_server_cert_auto)
+        opt_ssl_verify_server_cert= opt_use_ssl;
+#endif /* MYSQL_CLIENT */
+#if defined(HAVE_WOLFSSL)
 #if defined(MYSQL_SERVER)
       /* CRL does not work with WolfSSL (server) */
       opt_ssl_crl= NULL;
-#endif
+#endif /* MYSQL_SERVER */
 #if !defined(_WIN32) || !defined(LIBMARIADB)
       /* CRL_PATH does not work with WolfSSL (server) and GnuTLS (client) */
       opt_ssl_crlpath= NULL;
-#endif
-#endif
+#endif /* !_WIN32 || !LIBMARIADB */
+#endif /* HAVE_WOLFSSL */
       break;
-#endif
+#ifdef MYSQL_CLIENT
+    case  OPT_SSL_VERIFY_SERVER_CERT:
+      opt_ssl_verify_server_cert_auto= argument == autoset_my_option;
+      if (opt_ssl_verify_server_cert_auto)
+        opt_ssl_verify_server_cert= opt_use_ssl;
+      break;
+#endif /* MYSQL_CLIENT */
+#endif /* HAVE_OPENSSL !EMBEDDED_LIBRARY */
 #endif /* SSLOPT_CASE_INCLUDED */

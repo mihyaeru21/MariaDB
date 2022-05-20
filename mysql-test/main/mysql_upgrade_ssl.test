@@ -7,6 +7,6 @@
 --echo #
 --echo # Bug#55672 mysql_upgrade dies with internal error 
 --echo #
---exec $MYSQL_UPGRADE --skip-verbose --skip-silent --ssl --force 2>&1
+--exec $MYSQL_UPGRADE --skip-verbose --skip-silent --ssl-verify-server-cert=0 --ssl --force 2>&1
 --let $datadir= `select @@datadir`
 --remove_file $datadir/mysql_upgrade_info

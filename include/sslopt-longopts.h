@@ -56,7 +56,7 @@
    "Verify server's \"Common Name\" in its cert against hostname used "
    "when connecting. This option is disabled by default.",
    &opt_ssl_verify_server_cert, &opt_ssl_verify_server_cert,
-   0, GET_BOOL, OPT_ARG, 0, 0, 0, 0, 0, 0},
+   0, GET_BOOL | GET_AUTO, OPT_ARG, 0, 0, 0, 0, 0, 0},
 #endif
 #endif /* HAVE_OPENSSL */
 #endif /* SSLOPT_LONGOPTS_INCLUDED */

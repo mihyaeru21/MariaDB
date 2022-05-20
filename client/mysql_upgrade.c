@@ -377,7 +377,7 @@ get_one_option(const struct my_option *opt, const char *argument,
   case OPT_WRITE_BINLOG:                        /* --write-binlog */
     add_option= FALSE;
     break;
-
+#include <sslopt-case.h>
   case 'h': /* --host */
   case 'W': /* --pipe */
   case 'P': /* --port */

@@ -89,7 +89,7 @@ copy_file $MYSQL_TEST_DIR/std_data/server-new-cert.pem $ssl_cert;
 --exec $MYSQLADMIN --default-character-set=latin1 -S $MASTER_MYSOCK -P $MASTER_MYPORT  -u root --password= flush-ssl 2>&1
 
 --echo # Check new certificate used by new connection
-exec $MYSQL --ssl  -e  "SELECT IF(VARIABLE_VALUE <> '$ssl_not_after', 'OK', 'FAIL') as Result FROM INFORMATION_SCHEMA.SESSION_STATUS WHERE VARIABLE_NAME='Ssl_server_not_after'";
+exec $MYSQL --ssl-verify-server-cert=0 --ssl  -e  "SELECT IF(VARIABLE_VALUE <> '$ssl_not_after', 'OK', 'FAIL') as Result FROM INFORMATION_SCHEMA.SESSION_STATUS WHERE VARIABLE_NAME='Ssl_server_not_after'";
 
 --echo # Cleanup
 remove_file $ssl_cert;

@@ -36,7 +36,7 @@ copy_file $MYSQL_TEST_DIR/std_data/server-new-cert.pem $ssl_cert;
 FLUSH SSL;
 
 --echo # Check new certificate used by new connection
-exec $MYSQL --ssl  -e  "SELECT IF(VARIABLE_VALUE <> '$ssl_not_after', 'OK', 'FAIL') as Result FROM INFORMATION_SCHEMA.SESSION_STATUS WHERE VARIABLE_NAME='Ssl_server_not_after'";
+exec $MYSQL --ssl-verify-server-cert=0 --ssl  -e  "SELECT IF(VARIABLE_VALUE <> '$ssl_not_after', 'OK', 'FAIL') as Result FROM INFORMATION_SCHEMA.SESSION_STATUS WHERE VARIABLE_NAME='Ssl_server_not_after'";
 
 --echo # Check that existing SSL connection still works, and uses old certificate, even if new one is loaded in FLUSH SSL
 connection ssl_con;

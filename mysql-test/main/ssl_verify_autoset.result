@@ -1,0 +1,16 @@
+create procedure have_ssl()
+select if(variable_value > '','yes','no') as 'have_ssl'
+  from information_schema.session_status
+where variable_name='ssl_cipher';
+#
+# MDEV-28634 Client's --ssl-* options (without --ssl-verify-server-cert) are silently ignored if TLS is not possible
+#
+mysql --ssl-verify-server-cert=0 --autoset-ssl-verify-server-cert --ssl -e "call test.have_ssl()"
+ERROR 2026 (HY000): SSL connection error: self signed certificate in certificate chain
+mysql --autoset-ssl-verify-server-cert --ssl-ca=cacert.pem -e "call test.have_ssl()"
+have_ssl
+yes
+mysql --skip-ssl --ssl-verify-server-cert=1 --autoset-ssl-verify-server-cert -e "call test.have_ssl()"
+have_ssl
+no
+drop procedure have_ssl;

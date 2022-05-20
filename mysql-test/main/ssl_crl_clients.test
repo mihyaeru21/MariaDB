@@ -10,7 +10,7 @@ if (`SELECT COUNT(*) = 0 FROM information_schema.GLOBAL_VARIABLES
 
 --echo # Test clients with and without CRL lists
 
-let $ssl_base = --ssl-ca=$MYSQL_TEST_DIR/std_data/cacert.pem --ssl-key=$MYSQL_TEST_DIR/std_data/client-key.pem --ssl-cert=$MYSQL_TEST_DIR/std_data/client-cert.pem --ssl-verify-server-cert;
+let $ssl_base = --ssl-ca=$MYSQL_TEST_DIR/std_data/cacert.pem --ssl-key=$MYSQL_TEST_DIR/std_data/client-key.pem --ssl-cert=$MYSQL_TEST_DIR/std_data/client-cert.pem;
 let $ssl_crl = $ssl_base --ssl-crl=$MYSQL_TEST_DIR/std_data/server-cert.crl;
 let $ssl_crlpath = $ssl_base --ssl-crlpath=$MYSQL_TMP_DIR;
 
