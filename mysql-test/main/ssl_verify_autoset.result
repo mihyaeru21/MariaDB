@@ -13,4 +13,11 @@ yes
 mysql --skip-ssl --ssl-verify-server-cert=1 --autoset-ssl-verify-server-cert -e "call test.have_ssl()"
 have_ssl
 no
+#
+# MDEV-27105 --ssl option set as default for mariadb CLI
+#
+# but without server cert verification
+mysql -e "call test.have_ssl()"
+have_ssl
+yes
 drop procedure have_ssl;
