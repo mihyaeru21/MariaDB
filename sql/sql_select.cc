@@ -13309,7 +13309,17 @@ make_join_readinfo(JOIN *join, ulonglong options, uint no_jbuf_after)
        tab[-1].next_select=sub_select_cache;
 
     if (tab->cache && tab->cache->get_join_alg() == JOIN_CACHE::BNLH_JOIN_ALG)
+    {
       tab->type= JT_HASH;
+
+      /*
+        Reset Rowid Filter which may be possibly set
+        after best_access_path()
+      */
+      tab->range_rowid_filter_info= NULL;
+      delete tab->rowid_filter;
+      tab->rowid_filter= NULL;
+    }
       
     switch (tab->type) {
     case JT_SYSTEM:				// Only happens with left join 
