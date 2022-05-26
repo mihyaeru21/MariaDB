@@ -3,6 +3,12 @@
 -- source include/have_binlog_format_statement.inc
 -- source include/master-slave.inc
 
+connection slave;
+-- source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+-- source include/start_slave.inc
+connection master;
+
 CALL mtr.add_suppression("Unsafe statement written to the binary log using statement format since BINLOG_FORMAT = STATEMENT");
 
 # Load some data into t1
@@ -54,6 +60,7 @@ reset master;
 connection slave;
 stop slave;
 reset slave;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 
 connection master;
 let $1=5000;

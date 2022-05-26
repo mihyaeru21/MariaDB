@@ -1,5 +1,11 @@
 include/master-slave.inc
 [connection master]
+connection slave;
+include/stop_slave.inc
+reset slave;
+change master to master_use_gtid=no;
+include/start_slave.inc
+connection master;
 select last_insert_id();
 last_insert_id()
 0
@@ -58,6 +64,9 @@ connection slave;
 include/wait_for_slave_sql_error.inc [errno=1062]
 stop slave;
 reset slave;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+change master to master_use_gtid=no;
 include/check_slave_no_error.inc
 connection master;
 reset master;
@@ -94,6 +103,13 @@ LOAD DATA  INFILE "../../std_data/words.dat" INTO TABLE t1;
 ERROR 23000: Duplicate entry 'Aarhus' for key 'PRIMARY'
 DROP TABLE t1;
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+change master to master_use_gtid=no;
+include/start_slave.inc
+connection master;
 connection master;
 drop database if exists b48297_db1;
 drop database if exists b42897_db2;
@@ -124,6 +140,12 @@ DROP DATABASE b48297_db1;
 DROP DATABASE b42897_db2;
 connection slave;
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+change master to master_use_gtid=no;
+include/start_slave.inc
 connection master;
 use test;
 CREATE TABLE t1 (`key` TEXT, `text` TEXT);

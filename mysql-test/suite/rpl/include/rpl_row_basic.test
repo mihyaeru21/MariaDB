@@ -10,6 +10,9 @@
 #Testing command counters -BEFORE 
 #Storing the before counts of Slave
 connection slave;
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
 let $slave_com_commit_before= query_get_value(SHOW GLOBAL STATUS LIKE 'com_commit', Value, 1);
 let $slave_com_insert_before= query_get_value(SHOW GLOBAL STATUS LIKE 'com_insert', Value, 1);
 let $slave_com_delete_before= query_get_value(SHOW GLOBAL STATUS LIKE 'com_delete', Value, 1);
@@ -284,6 +287,11 @@ sync_slave_with_master;
 # Just to get a clean binary log
 --source include/rpl_reset.inc
 
+connection slave;
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+
 connection master;
 INSERT INTO t1 VALUES ('K','K'), ('L','L'), ('M','M');
 sync_slave_with_master;
@@ -416,6 +424,11 @@ call mtr.add_suppression("Can't find record in 't1'");
 --let $rpl_only_running_threads= 1
 --source include/rpl_reset.inc
 
+connection slave;
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+
 --echo [expecting slave to replicate correctly]
 connection master;
 INSERT INTO t4 VALUES (1, "", 1);
@@ -438,6 +451,11 @@ connection slave;
 
 --source include/rpl_reset.inc
 
+connection slave;
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+
 --echo [expecting slave to stop]
 connection master;
 INSERT INTO t6 VALUES (1, "", 1);
@@ -450,6 +468,11 @@ connection slave;
 --source include/wait_for_slave_sql_error.inc
 
 --source include/rpl_reset.inc
+
+connection slave;
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
 
 --echo [expecting slave to replicate correctly]
 connection master;

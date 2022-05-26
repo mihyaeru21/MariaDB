@@ -6,6 +6,12 @@ let $SERVER_VERSION=`select version()`;
 
 --source include/master-slave.inc
 
+connection slave;
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+connection master;
+
 # Add suppression for expected warning(s) in slaves error log
 call mtr.add_suppression("Can't find record in 't.'");
 
@@ -43,6 +49,11 @@ USE test;
 # not generate rows
 --source include/rpl_reset.inc
 
+connection slave;
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+
 connection master;
 CREATE TABLE t1 (a INT);
 DELETE FROM t1;
@@ -60,6 +71,10 @@ DROP TABLE t1;
 --source include/rpl_reset.inc
 
 connection slave;
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+
 SET GLOBAL QUERY_CACHE_SIZE=0;
 call mtr.add_suppression("Slave SQL.*Could not execute Update_rows event on table test.t1.* error.* 1032");
 
@@ -91,6 +106,11 @@ DROP TABLE t1;
 --echo ================ Test for BUG#22550 ================
 --source include/rpl_reset.inc
 
+connection slave;
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+
 connection master;
 CREATE TABLE t1 (a BIT(1), b INT) ENGINE=MYISAM;
 sync_slave_with_master;
@@ -116,6 +136,11 @@ sync_slave_with_master;
 
 --echo ================ Test for BUG#22583 ================
 --source include/rpl_reset.inc
+
+connection slave;
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
 
 # disabling warnings temporarily for ENGINE=INNODB to work without InnoDB
 --disable_warnings
@@ -214,6 +239,11 @@ sync_slave_with_master;
 #
 
 --source include/rpl_reset.inc
+
+connection slave;
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
 
 connection master;
 CREATE TABLE t1 (a INT PRIMARY KEY, b SET('master','slave'));

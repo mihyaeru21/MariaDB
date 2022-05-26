@@ -19,6 +19,9 @@ SET sql_log_bin = 1;
 # (otherwise RESET MASTER may come too early).
 save_master_pos;
 connection slave;
+source include/stop_slave.inc;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+source include/start_slave.inc;
 
 sync_with_master;
 reset master;
@@ -333,6 +336,10 @@ source include/delete_anonymous_users.inc;
 
 --echo -- make a user on the slave that can list but not kill system threads.
 connection slave;
+
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
 
 FLUSH PRIVILEGES;
 GRANT USAGE   ON *.* TO user43748@127.0.0.1 IDENTIFIED BY 'meow';

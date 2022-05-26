@@ -1,5 +1,10 @@
 include/master-slave.inc
 [connection master]
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
+connection master;
 call mtr.add_suppression("Error 'Table 'test.t' doesn't exist' on query.");
 include/assert.inc [On master, the table should return an empty set.]
 connection slave;
@@ -54,6 +59,9 @@ reset master;
 connection slave;
 include/stop_slave.inc
 reset slave;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 reset master;
 set @saved_slave_trans_retry_interval= @@GLOBAL.slave_transaction_retry_interval;
 set global slave_transaction_retry_interval=1;

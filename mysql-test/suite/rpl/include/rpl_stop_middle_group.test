@@ -5,6 +5,11 @@
 # The matter of testing correlates to some of `rpl_start_stop_slave' that does
 # not require `have_debug'.
 
+connection slave;
+source include/stop_slave.inc;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+source include/start_slave.inc;
+
 connection master;
 
 call mtr.add_suppression("Unsafe statement written to the binary log using statement format since BINLOG_FORMAT = STATEMENT");
@@ -142,6 +147,12 @@ SET @@GLOBAL.debug_dbug = @saved_dbug;
 # the sql thread has an error, so reset replication state
 --let $rpl_only_running_threads= 1
 --source include/rpl_reset.inc
+
+connection slave;
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+connection master;
 
 connection master;
 drop table tm, ti;

@@ -3,6 +3,11 @@
 
 -- source include/master-slave.inc
 
+connection slave;
+-- source include/stop_slave.inc
+change master to master_use_gtid=no;
+-- source include/start_slave.inc
+
 # test replication of GRANT
 connection master;
 create user rpl_do_grant@localhost;
@@ -199,6 +204,13 @@ SET SQL_LOG_BIN= 1;
 # following tests
 --let $rpl_only_running_threads= 1
 -- source include/rpl_reset.inc
+
+-- connection slave
+-- source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+-- source include/start_slave.inc
+
+-- connection master
 USE test;
 
 # BUG#49119: Master crashes when executing 'REVOKE ... ON
@@ -246,6 +258,12 @@ DROP PROCEDURE p1;
 
 -- connection master
 -- source include/rpl_reset.inc
+
+-- connection slave
+-- source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+-- source include/start_slave.inc
+
 -- connection master
 
 CREATE TABLE t1(c1 INT);
@@ -306,6 +324,12 @@ DROP USER 'user49119'@'localhost';
 #
 
 -- source include/rpl_reset.inc
+
+-- connection slave
+-- source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+-- source include/start_slave.inc
+
 -- connection master
 
 grant all on *.* to foo@"1.2.3.4";
@@ -328,6 +352,12 @@ DROP USER foo@"1.2.3.4";
 --echo 
 --echo # Bug#27606 GRANT statement should be replicated with DEFINER information
 --source include/rpl_reset.inc
+
+-- connection slave
+-- source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+-- source include/start_slave.inc
+
 --connection master
 GRANT SELECT, INSERT ON mysql.user TO user_bug27606@localhost;
 

@@ -2,8 +2,8 @@ connect  slave,127.0.0.1,root,,,$SERVER_MYPORT_3;
 connect  master1,127.0.0.1,root,,,$SERVER_MYPORT_1;
 connect  master2,127.0.0.1,root,,,$SERVER_MYPORT_2;
 connection slave;
-change master 'slave1' to master_port=MYPORT_1, master_host='127.0.0.1', master_user='root';
-change master 'slave2' to master_port=MYPORT_2, master_host='127.0.0.1', master_user='root';
+change master 'slave1' to master_port=MYPORT_1, master_host='127.0.0.1', master_user='root', master_use_gtid=no;
+change master 'slave2' to master_port=MYPORT_2, master_host='127.0.0.1', master_user='root', master_use_gtid=no;
 start slave 'slave1';
 set default_master_connection = 'slave1';
 include/wait_for_slave_to_start.inc
@@ -261,6 +261,8 @@ Slave_DDL_Groups	0
 Slave_Non_Transactional_Groups	0
 Slave_Transactional_Groups	0
 reset slave 'slave1';
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
 show all slaves status;
 Connection_name	slave1
 Slave_SQL_State	
@@ -306,7 +308,7 @@ Replicate_Ignore_Server_Ids
 Master_Server_Id	1
 Master_SSL_Crl	
 Master_SSL_Crlpath	
-Using_Gtid	No
+Using_Gtid	Slave_Pos
 Gtid_IO_Pos	
 Replicate_Do_Domain_Ids	
 Replicate_Ignore_Domain_Ids	

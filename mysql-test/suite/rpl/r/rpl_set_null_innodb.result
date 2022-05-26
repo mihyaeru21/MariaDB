@@ -1,6 +1,10 @@
 include/master-slave.inc
 [connection master]
 include/rpl_reset.inc
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 connection master;
 CREATE TABLE t1 (c1 BIT, c2 INT) Engine=InnoDB;
 INSERT INTO `t1` VALUES ( 1, 1 );
@@ -15,6 +19,12 @@ connection master;
 DROP TABLE t1;
 connection slave;
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 connection master;
 CREATE TABLE t1 (c1 CHAR) Engine=InnoDB;
 INSERT INTO t1 ( c1 ) VALUES ( 'w' ) ;

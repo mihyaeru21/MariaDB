@@ -1,5 +1,9 @@
 include/master-slave.inc
 [connection master]
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 ==== Create new replication user ====
 connection master;
 GRANT REPLICATION SLAVE ON *.* TO rpl@127.0.0.1 IDENTIFIED BY 'rpl';
@@ -43,6 +47,12 @@ include/wait_for_slave_io_error.inc [errno=1045]
 include/stop_slave_sql.inc
 CHANGE MASTER TO MASTER_USER = 'root', MASTER_PASSWORD = '';
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 connection master;
 DROP TABLE t1;
 include/rpl_end.inc

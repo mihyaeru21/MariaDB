@@ -1,5 +1,9 @@
 include/master-slave.inc
 [connection master]
+connection slave;
+include/stop_slave.inc
+change master to master_use_gtid=no;
+include/start_slave.inc
 connection master;
 create user rpl_do_grant@localhost;
 grant select on *.* to rpl_do_grant@localhost;
@@ -198,6 +202,13 @@ SET SQL_LOG_BIN= 0;
 DROP USER 'create_rout_db'@'localhost';
 SET SQL_LOG_BIN= 1;
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
+connection master;
 USE test;
 ######## BUG#49119 #######
 ### i) test case from the 'how to repeat section'
@@ -214,6 +225,12 @@ connection slave;
 ### ii) Test case in which REVOKE partially succeeds
 connection master;
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 connection master;
 CREATE TABLE t1(c1 INT);
 CREATE PROCEDURE p1() SELECT * FROM t1 |
@@ -277,6 +294,12 @@ DROP PROCEDURE p1;
 DROP USER 'user49119'@'localhost';
 connection slave;
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 connection master;
 grant all on *.* to foo@"1.2.3.4";
 revoke all privileges, grant option from "foo";
@@ -295,6 +318,12 @@ connection slave;
 
 # Bug#27606 GRANT statement should be replicated with DEFINER information
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 connection master;
 GRANT SELECT, INSERT ON mysql.user TO user_bug27606@localhost;
 SELECT Grantor FROM mysql.tables_priv WHERE User='user_bug27606';

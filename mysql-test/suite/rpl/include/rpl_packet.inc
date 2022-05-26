@@ -18,6 +18,12 @@
 source include/have_binlog_format_row.inc;
 source include/master-slave.inc;
 
+connection slave;
+source include/stop_slave.inc;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+source include/start_slave.inc;
+connection master;
+
 call mtr.add_suppression("Slave I/O: Got a packet bigger than 'slave_max_allowed_packet' bytes, .*error.* 1153");
 call mtr.add_suppression("Log entry on master is longer than slave_max_allowed_packet");
 let $db= DB_NAME_OF_MAX_LENGTH_AKA_NAME_LEN_64_BYTES_____________________;
@@ -116,6 +122,12 @@ connection slave;
 
 --let $rpl_only_running_threads= 1
 --source include/rpl_reset.inc
+
+--connection slave
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+
 --connection master
 DROP TABLE t1;
 --sync_slave_with_master
@@ -138,6 +150,7 @@ connection slave;
 # Remove the bad binlog and clear error status on slave.
 STOP SLAVE;
 RESET SLAVE;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 --connection master
 RESET MASTER;
 
@@ -179,6 +192,7 @@ DROP TABLE t1;
 
 # Clear Last_IO_Error
 RESET SLAVE;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 
 --source include/rpl_end.inc
 # End of tests

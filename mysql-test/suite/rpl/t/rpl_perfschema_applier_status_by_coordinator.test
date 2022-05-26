@@ -36,6 +36,12 @@
 --source include/have_perfschema.inc
 --source include/master-slave.inc
 
+--connection slave
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+--connection master
+
 call mtr.add_suppression("Error 'Table 'test.t' doesn't exist' on query.");
 
 let $assert_text= On master, the table should return an empty set.;
@@ -211,6 +217,7 @@ reset master;
 --connection slave
 --source include/stop_slave.inc
 reset slave;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 reset master;
 set @saved_slave_trans_retry_interval= @@GLOBAL.slave_transaction_retry_interval;
 set global slave_transaction_retry_interval=1;

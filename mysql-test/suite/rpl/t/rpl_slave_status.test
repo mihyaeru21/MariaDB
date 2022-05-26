@@ -20,6 +20,11 @@
 
 --source include/master-slave.inc
 
+connection slave;
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+
 --echo ==== Create new replication user ====
 connection master;
 GRANT REPLICATION SLAVE ON *.* TO rpl@127.0.0.1 IDENTIFIED BY 'rpl';
@@ -74,6 +79,11 @@ CHANGE MASTER TO MASTER_USER = 'root', MASTER_PASSWORD = '';
 # clear Slave_IO_Errno
 --let $rpl_only_running_threads= 1
 --source include/rpl_reset.inc
+
+connection slave;
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
 
 connection master;
 DROP TABLE t1;

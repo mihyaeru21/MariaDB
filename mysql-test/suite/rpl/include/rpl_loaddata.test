@@ -14,6 +14,13 @@
 source include/have_innodb.inc;
 source include/master-slave.inc;
 
+--connection slave
+source include/stop_slave.inc;
+reset slave;
+change master to master_use_gtid=no;
+source include/start_slave.inc;
+--connection master
+
 --disable_query_log
 CALL mtr.add_suppression("Unsafe statement written to the binary log using statement format since BINLOG_FORMAT = STATEMENT");
 --enable_query_log
@@ -110,6 +117,7 @@ connection slave;
 # RESET SLAVE and see if error is cleared in SHOW SLAVE STATUS.
 stop slave;
 reset slave;
+change master to master_use_gtid=no;
 --source include/check_slave_no_error.inc
 
 # Finally, see if logging is done ok on master for a failing LOAD DATA INFILE
@@ -163,6 +171,12 @@ DROP TABLE t1;
 # replication aborts
 -- let $rpl_only_running_threads= 1
 -- source include/rpl_reset.inc
+
+-- connection slave
+-- source include/stop_slave.inc
+change master to master_use_gtid=no;
+-- source include/start_slave.inc
+-- connection master
 
 -- let $db1= b48297_db1
 -- let $db2= b42897_db2
@@ -233,6 +247,12 @@ source include/diff_tables.inc;
 
 # BUG#49479: LOAD DATA INFILE is binlogged without escaping field names
 -- source include/rpl_reset.inc
+
+-- connection slave
+-- source include/stop_slave.inc
+change master to master_use_gtid=no;
+-- source include/start_slave.inc
+
 -- connection master
 use test;
 CREATE TABLE t1 (`key` TEXT, `text` TEXT);

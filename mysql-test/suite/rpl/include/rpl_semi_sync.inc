@@ -8,6 +8,12 @@ source include/not_embedded.inc;
 source include/have_innodb.inc;
 source include/master-slave.inc;
 
+--connection slave
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+--connection master
+
 let $engine_type= InnoDB;
 
 # Suppress warnings that might be generated during the test
@@ -39,6 +45,7 @@ source include/stop_slave.inc;
 reset slave;
 set global rpl_semi_sync_master_enabled= 0;
 set global rpl_semi_sync_slave_enabled= 0;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 
 connection master;
 reset master;
@@ -352,6 +359,7 @@ connection slave;
 
 source include/stop_slave.inc;
 reset slave;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 
 # Kill the dump thread on master for previous slave connection and
 --source include/kill_binlog_dump_threads.inc
@@ -389,6 +397,7 @@ show status like 'Rpl_semi_sync_master_yes_tx';
 connection slave;
 source include/stop_slave.inc;
 reset slave;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 connection master;
 reset master;
 

@@ -28,6 +28,13 @@
 #
 
 source include/master-slave.inc;
+
+--connection slave
+source include/stop_slave.inc;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+source include/start_slave.inc;
+
+--connection master
 disable_warnings;
 DROP DATABASE IF EXISTS mysqltest;
 
@@ -128,6 +135,11 @@ DROP TABLE t3;
 --echo # binlogged if the table already exists.
 --echo # After the worklog, some bugs will disappear automotically.
 --source include/rpl_reset.inc
+
+connection slave;
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
 
 --echo
 --echo # Case 1: BUG#47132

@@ -4,6 +4,12 @@
 -- source include/have_binlog_format_row.inc
 -- source include/master-slave.inc
 
+--connection slave
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+--connection master
+
 # Test if the slave SQL thread can be more than 16K behind the slave
 # I/O thread (> IO_SIZE)
 
@@ -15,6 +21,7 @@ RESET MASTER;
 connection slave;
 STOP SLAVE;
 RESET SLAVE;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 
 connection master;
 let $1=5000;

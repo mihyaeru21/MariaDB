@@ -1,4 +1,8 @@
 include/rpl_init.inc [topology=1->2]
+connection server_2;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 *** Test normal shutdown/restart of slave server configured as a GTID slave. ***
 connection server_1;
 CREATE TABLE t1 (a INT PRIMARY KEY);

@@ -15,6 +15,10 @@ connection slave;
 SET @old_slave_exec_mode= @@global.slave_exec_mode;
 
 
+
+source include/stop_slave.inc;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+source include/start_slave.inc;
 --echo ######## Run with slave_exec_mode=STRICT ########
 
 SET @@global.slave_exec_mode = 'STRICT';
@@ -22,6 +26,10 @@ source include/rpl_conflicts.test;
 
 --source include/rpl_reset.inc
 
+connection slave;
+source include/stop_slave.inc;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+source include/start_slave.inc;
 
 --echo ######## Run with slave_exec_mode=IDEMPOTENT ########
 

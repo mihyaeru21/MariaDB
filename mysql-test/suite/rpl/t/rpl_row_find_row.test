@@ -19,6 +19,12 @@
 -- source include/have_binlog_format_row.inc
 -- source include/master-slave.inc
 
+-- connection slave
+-- source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+-- source include/start_slave.inc
+-- connection master
+
 #
 # Case #1: master has key, but slave has not. 
 #          Replication does not break.
@@ -51,6 +57,12 @@ DROP TABLE t;
 #          Replication does not break anymore.
 # 
 --source include/rpl_reset.inc
+
+-- connection slave
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+ 
 -- connection master
 
 CREATE TABLE t (a int, b int, c int, key(b));
@@ -85,6 +97,12 @@ DROP TABLE t;
 #
 
 -- source include/rpl_reset.inc
+
+-- connection slave
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+ 
 -- connection master
 
 CREATE TABLE t1 (c1 INT NOT NULL, c2 INT NOT NULL, c3 INT, UNIQUE KEY(c1,c3), KEY(c2));

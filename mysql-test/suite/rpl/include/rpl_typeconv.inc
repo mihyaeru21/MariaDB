@@ -8,6 +8,10 @@
 --source include/master-slave.inc
 
 connection slave;
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+
 set @saved_slave_type_conversions = @@global.slave_type_conversions;
 CREATE TABLE type_conversions (
        TestNo INT AUTO_INCREMENT PRIMARY KEY,

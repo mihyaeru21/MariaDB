@@ -9,6 +9,12 @@
 -- source include/have_cp932.inc
 -- source include/master-slave.inc
 
+--connection slave
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+--connection master
+
 --echo ---Setup Section  --
 
 # we need this for getting fixed timestamps inside of this test
@@ -101,6 +107,7 @@ connection master;
 reset master;
 connection slave;
 reset slave;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 start slave;
 --source include/wait_for_slave_to_start.inc
 connection master;
@@ -168,6 +175,7 @@ connection master;
 reset master;
 connection slave;
 reset slave;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 start slave;
 --source include/wait_for_slave_to_start.inc
 connection master;
@@ -231,6 +239,7 @@ connection master;
 reset master;
 connection slave;
 reset slave;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 start slave;
 --source include/wait_for_slave_to_start.inc
 connection master;

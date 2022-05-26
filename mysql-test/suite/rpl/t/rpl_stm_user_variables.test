@@ -5,6 +5,12 @@
 -- source include/have_binlog_format_statement.inc
 -- source include/master-slave.inc
 
+-- connection slave
+-- source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+-- source include/start_slave.inc
+-- connection master
+
 ## Setup user variables for several numeric types, so that we get
 ## coverage on the User_var_log_event different val types
 
@@ -134,6 +140,12 @@ DROP TABLE t1;
 #
 #####################################################################
 --source include/rpl_reset.inc
+
+-- connection slave
+-- source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+-- source include/start_slave.inc
+
 -- connection master
 SET sql_mode = 'NO_ENGINE_SUBSTITUTION';
 CREATE TABLE t1 ( c INT, PRIMARY KEY (c)) Engine=MyISAM;
@@ -166,6 +178,12 @@ DROP TABLE t1;
 --echo
 
 --source include/rpl_reset.inc
+
+-- connection slave
+-- source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+-- source include/start_slave.inc
+
 connection master;
 
 CREATE TABLE t1 (a INT, b INT);

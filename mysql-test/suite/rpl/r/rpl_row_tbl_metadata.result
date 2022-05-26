@@ -1,5 +1,10 @@
 include/master-slave.inc
 [connection master]
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
+connection master;
 DROP TABLE IF EXISTS `t1`;
 ### TABLE with field_metadata_size == 290
 CREATE TABLE `t1` (
@@ -164,6 +169,12 @@ connection slave;
 connection master;
 === Using mysqlbinlog to detect failure. Before the patch mysqlbinlog would find a corrupted event, thence would fail.
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 connection master;
 ### action: generating several tables with different metadata 
 ###         sizes (resorting to perl)

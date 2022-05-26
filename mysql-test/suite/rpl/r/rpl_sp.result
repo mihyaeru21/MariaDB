@@ -1,5 +1,10 @@
 include/master-slave.inc
 [connection master]
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
+connection master;
 set local sql_mode='';
 drop database if exists mysqltest1;
 create database mysqltest1;
@@ -1348,6 +1353,13 @@ ERROR 42000: FUNCTION test.f1 does not exist
 # Bug #11918 Can't use a declared variable in LIMIT clause
 #
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
+connection master;
 create table t1 (c1 int);
 insert into t1 (c1) values
 (1), (2), (3), (4), (5), (6), (7), (8), (9), (10);

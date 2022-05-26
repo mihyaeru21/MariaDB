@@ -1,5 +1,10 @@
 include/master-slave.inc
 [connection master]
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
+connection master;
 #Test case 1:
 CREATE TABLE t1 (f1 INTEGER PRIMARY KEY) ENGINE=INNODB;
 CREATE TABLE t2 (f1 INTEGER PRIMARY KEY) ENGINE=INNODB;
@@ -171,6 +176,12 @@ DROP TABLE t3;
 DROP PROCEDURE p1;
 # Test case 3:
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 connection master;
 CREATE TABLE t (f1 int(10) unsigned NOT NULL, PRIMARY KEY (f1)) ENGINE=InnoDB;
 CREATE TRIGGER t_insert_trig AFTER INSERT ON t FOR EACH ROW
@@ -215,6 +226,12 @@ connection master;
 DROP TABLE t;
 # Test case 4:
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 connection master;
 CREATE TABLE t (f1 int(10) unsigned NOT NULL) ENGINE=InnoDB;
 CREATE TABLE t1 (f1 int(10) unsigned NOT NULL) ENGINE=InnoDB;
@@ -279,6 +296,12 @@ DROP TABLE t;
 DROP TABLE t1;
 # Test case 5:
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 connection master;
 CREATE TABLE t (f1 int(10) unsigned NOT NULL) ENGINE=InnoDB;
 CREATE TABLE t1 (f1 int(10) unsigned NOT NULL) ENGINE=InnoDB;
@@ -335,6 +358,12 @@ DROP TABLE t;
 DROP TABLE t1;
 # Test case 6:
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 connection master;
 CREATE TABLE t1 (f1 INTEGER ) ENGINE=INNODB;
 CREATE TABLE t2 (f1 INTEGER ) ENGINE=INNODB;
@@ -405,6 +434,12 @@ DROP TABLE t2;
 DROP FUNCTION f1;
 # Test case 7:
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 connection master;
 CREATE TABLE t1 (f1 INTEGER ) ENGINE=INNODB;
 CREATE TABLE t2 (f1 INTEGER ) ENGINE=INNODB;
@@ -476,6 +511,12 @@ DROP TABLE t2;
 DROP FUNCTION f1;
 # Test case 8:
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 connection master;
 CREATE TABLE t1 (f1 INTEGER ) ENGINE=INNODB;
 CREATE FUNCTION f1() RETURNS INT

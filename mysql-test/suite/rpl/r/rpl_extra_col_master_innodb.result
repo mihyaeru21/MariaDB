@@ -12,6 +12,10 @@ include/master-slave.inc
 
 ***** Testing more columns on the Master *****
 
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 connection master;
 CREATE TABLE t1 (f1 INT, f2 INT, f3 INT PRIMARY KEY, f4 CHAR(20),
 /* extra */
@@ -438,6 +442,9 @@ connection master;
 
 STOP SLAVE;
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 
 ** create table slave side **
 CREATE TABLE t10 (a INT PRIMARY KEY, b BLOB, c CHAR(5)
@@ -483,6 +490,9 @@ connection slave;
 *** Create t11 on slave  ***
 STOP SLAVE;
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 CREATE TABLE t11 (a INT PRIMARY KEY, b BLOB, c VARCHAR(254)
 ) ENGINE='InnoDB';
 
@@ -525,6 +535,9 @@ connection slave;
 *** Create t12 on slave  ***
 STOP SLAVE;
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 CREATE TABLE t12 (a INT PRIMARY KEY, b BLOB, c BLOB
 ) ENGINE='InnoDB';
 
@@ -574,6 +587,9 @@ connection slave;
 *** Create t14 on slave  ***
 STOP SLAVE;
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 CREATE TABLE t14 (c1 INT PRIMARY KEY, c4 BLOB, c5 CHAR(5)
 ) ENGINE='InnoDB';
 
@@ -639,6 +655,9 @@ include/wait_for_slave_sql_error.inc [errno=1091]
 Last_SQL_Error = 'Error 'Can't DROP COLUMN `c7`; check that it exists' on query. Default database: 'test'. Query: 'ALTER TABLE t14 DROP COLUMN c7''
 STOP SLAVE;
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 
 *** Drop t14  ***
 DROP TABLE t14;
@@ -656,6 +675,9 @@ START SLAVE;
 *** Create t15 on slave  ***
 STOP SLAVE;
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 CREATE TABLE t15 (c1 INT PRIMARY KEY, c4 BLOB, c5 CHAR(5)
 ) ENGINE='InnoDB';
 
@@ -694,6 +716,9 @@ include/wait_for_slave_sql_error.inc [errno=1054]
 Last_SQL_Error = 'Error 'Unknown column 'c7' in 't15'' on query. Default database: 'test'. Query: 'ALTER TABLE t15 ADD COLUMN c2 DECIMAL(8,2) AFTER c7''
 STOP SLAVE;
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 
 *** Drop t15  ***
 DROP TABLE t15;
@@ -711,6 +736,9 @@ START SLAVE;
 *** Create t16 on slave  ***
 STOP SLAVE;
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 CREATE TABLE t16 (c1 INT PRIMARY KEY, c4 BLOB, c5 CHAR(5)
 ) ENGINE='InnoDB';
 
@@ -749,6 +777,9 @@ include/wait_for_slave_sql_error.inc [errno=1072]
 Last_SQL_Error = 'Error 'Key column 'c6' doesn't exist in table' on query. Default database: 'test'. Query: 'CREATE INDEX part_of_c6 ON t16 (c6)''
 STOP SLAVE;
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 
 *** Drop t16  ***
 DROP TABLE t16;
@@ -766,6 +797,9 @@ START SLAVE;
 *** Create t17 on slave  ***
 STOP SLAVE;
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 CREATE TABLE t17 (c1 INT PRIMARY KEY, c4 BLOB, c5 CHAR(5)
 ) ENGINE='InnoDB';
 
@@ -832,6 +866,9 @@ connection slave;
 
 STOP SLAVE;
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 CREATE TABLE t18 (c1 INT PRIMARY KEY, c4 BLOB, c5 CHAR(5)
 ) ENGINE='InnoDB';
 
@@ -897,6 +934,9 @@ connection slave;
 *** Create t5 on slave  ***
 STOP SLAVE;
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 CREATE TABLE t5 (c1 INT PRIMARY KEY, c4 BLOB, c5 CHAR(5)
 ) ENGINE='InnoDB';
 

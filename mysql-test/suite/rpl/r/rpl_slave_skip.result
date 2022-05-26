@@ -3,6 +3,7 @@ include/master-slave.inc
 connection slave;
 STOP SLAVE;
 include/wait_for_slave_to_stop.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 connection master;
 SET SESSION BINLOG_FORMAT=ROW;
 CREATE TABLE t1 (a INT, b INT) ENGINE=MyISAM;
@@ -64,6 +65,9 @@ c	d
 STOP SLAVE;
 include/wait_for_slave_to_stop.inc
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 connection master;
 RESET MASTER;
 SET SESSION BINLOG_FORMAT=STATEMENT;

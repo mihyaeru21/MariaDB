@@ -6,6 +6,12 @@
 --source include/have_innodb.inc
 --source include/master-slave.inc
 
+--connection slave
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+--connection master
+
 let $engine_type=Innodb;
 let $database_name=test;
 --source include/rpl_mixing_engines.test
@@ -15,6 +21,12 @@ let $database_name=test;
 #
 
 --source include/rpl_reset.inc
+
+--connection slave
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+
 -- connection master
 
 CREATE TABLE `t1` ( 

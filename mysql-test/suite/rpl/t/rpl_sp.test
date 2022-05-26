@@ -6,6 +6,12 @@
 source include/have_binlog_format_mixed.inc;
 source include/master-slave.inc;
 
+--connection slave
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+--connection master
+
 set local sql_mode='';
 # we need a db != test, where we don't have automatic grants
 --disable_warnings
@@ -682,6 +688,12 @@ drop function f1;
 --echo # Bug #11918 Can't use a declared variable in LIMIT clause
 --echo #
 --source include/rpl_reset.inc
+
+--connection slave
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+--connection master
 
 create table t1 (c1 int);
 insert into t1 (c1) values

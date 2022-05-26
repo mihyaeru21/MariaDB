@@ -1,5 +1,10 @@
 include/master-slave.inc
 [connection master]
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
+connection master;
 create table t1 (a int not null auto_increment,b int, primary key (a)) engine=myisam auto_increment=3;
 insert into t1 values (NULL,1),(NULL,2),(NULL,3);
 select * from t1;
@@ -262,6 +267,12 @@ t1	CREATE TABLE `t1` (
 connection master;
 drop table t1;
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 connection master;
 DROP TABLE IF EXISTS t1;
 DROP TABLE IF EXISTS t2;

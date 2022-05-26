@@ -13,6 +13,11 @@ source include/have_binlog_format_mixed.inc;
 source include/have_innodb.inc;
 source include/master-slave.inc;
 
+--connection slave
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+
 --echo ==== Initialize ====
 
 --connection master
@@ -87,6 +92,11 @@ sync_slave_with_master;
 #  
 
 --source include/rpl_reset.inc
+
+-- connection slave
+-- source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+-- source include/start_slave.inc
 -- connection master
 
 # action: setup environment

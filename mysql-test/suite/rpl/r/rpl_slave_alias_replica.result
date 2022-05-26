@@ -1,7 +1,10 @@
 include/master-slave.inc
 [connection master]
-"Command: STOP SLAVE --> STOP REPLICA"
 connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
+"Command: STOP SLAVE --> STOP REPLICA"
 STOP REPLICA;
 include/wait_for_slave_io_to_stop.inc
 include/wait_for_slave_sql_to_stop.inc
@@ -30,6 +33,9 @@ include/wait_for_slave_io_to_stop.inc
 include/wait_for_slave_sql_to_stop.inc
 "Command: RESET SLAVE ALL --> RESET REPLICA ALL"
 RESET REPLICA ALL;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 connection master;
 RESET MASTER;
 CREATE TABLE t(f INT) ENGINE=INNODB;

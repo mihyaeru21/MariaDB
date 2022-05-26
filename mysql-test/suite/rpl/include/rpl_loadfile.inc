@@ -18,6 +18,12 @@
 -- source include/have_binlog_format_mixed_or_row.inc
 -- source include/master-slave.inc
 
+--connection slave
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+--connection master
+
 -- source suite/rpl/include/rpl_loadfile.test
 
 #  BUG#39701: Mixed binlog format does not switch to row mode on LOAD_FILE
@@ -64,6 +70,12 @@
 #          table are the same
 
 --source include/rpl_reset.inc
+
+--connection slave
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+--connection master
 
 connection master;
 let $file= $MYSQLTEST_VARDIR/tmp/bug_39701.data;

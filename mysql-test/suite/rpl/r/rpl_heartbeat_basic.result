@@ -5,6 +5,7 @@ include/master-slave.inc
 connection slave;
 include/stop_slave.inc
 RESET SLAVE;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 SET @restore_slave_net_timeout=@@global.slave_net_timeout;
 connection master;
 RESET MASTER;
@@ -15,38 +16,49 @@ connection slave;
 CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root';
 slave_net_timeout/slave_heartbeat_timeout=2.0000
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
 
 *** Reset slave affect ***
 SET @@global.slave_net_timeout=30;
-CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=5;
+CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=5, MASTER_USE_GTID=NO;
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
 SHOW GLOBAL STATUS LIKE 'slave_heartbeat_period';
 Variable_name	Value
 Slave_heartbeat_period	15.000
 
 *** Default value if slave_net_timeout changed ***
 SET @@global.slave_net_timeout=50;
-CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20;
+CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_USE_GTID=NO;
 SHOW GLOBAL STATUS LIKE 'slave_heartbeat_period';
 Variable_name	Value
 Slave_heartbeat_period	25.000
 SET @@global.slave_net_timeout=@restore_slave_net_timeout;
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 
 *** Warning if updated slave_net_timeout < slave_heartbeat_timeout ***
 SET @@global.slave_net_timeout=FLOOR(SLAVE_HEARTBEAT_TIMEOUT)-1;
 SET @@global.slave_net_timeout=@restore_slave_net_timeout;
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
 
 *** Warning if updated slave_heartbeat_timeout > slave_net_timeout ***
-CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=SLAVE_NET_TIMEOUT;
+CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=SLAVE_NET_TIMEOUT, MASTER_USE_GTID=NO;
 Warnings:
 Warning	1704	The requested value for the heartbeat period exceeds the value of `slave_net_timeout' seconds. A sensible value for the period should be less than the timeout
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
 
 *** CHANGE MASTER statement only updates slave_heartbeat_period ***
 SET @@global.slave_net_timeout=20;
-CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=5;
+CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=5, MASTER_USE_GTID=NO;
 SHOW VARIABLES LIKE 'slave_net_timeout';
 Variable_name	Value
 slave_net_timeout	20
@@ -62,6 +74,9 @@ Variable_name	Value
 Slave_heartbeat_period	5.000
 SET @@global.slave_net_timeout=@restore_slave_net_timeout;
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 
 *** Update slave_net_timeout on master ***
 connection master;
@@ -69,7 +84,9 @@ SET @@global.slave_net_timeout=500;
 connection slave;
 SET @@global.slave_net_timeout=200;
 RESET SLAVE;
-CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_USE_GTID=NO;
 include/start_slave.inc
 connection master;
 connection slave;
@@ -82,13 +99,15 @@ Slave_heartbeat_period	100.000
 SET @@global.slave_net_timeout=@restore_slave_net_timeout;
 include/stop_slave.inc
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
 connection master;
 SET @@global.slave_net_timeout=@restore_slave_net_timeout;
 
 *** Start/stop slave ***
 connection slave;
 SET @@global.slave_net_timeout=100;
-CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=20;
+CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=20, MASTER_USE_GTID=NO;
 include/start_slave.inc
 connection master;
 connection slave;
@@ -103,7 +122,7 @@ Slave_heartbeat_period	20.000
 *** Reload slave ***
 connection slave;
 SET @@global.slave_net_timeout=50;
-CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=30;
+CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=30, MASTER_USE_GTID=NO;
 include/rpl_restart_server.inc [server_number=2]
 SHOW GLOBAL STATUS LIKE 'slave_heartbeat_period';
 Variable_name	Value
@@ -111,7 +130,7 @@ Slave_heartbeat_period	30.000
 SET @restore_slave_net_timeout=@@global.slave_net_timeout;
 
 *** Disable heartbeat ***
-CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=0;
+CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=0, MASTER_USE_GTID=NO;
 SHOW GLOBAL STATUS LIKE 'slave_heartbeat_period';
 Variable_name	Value
 Slave_heartbeat_period	0.000
@@ -135,55 +154,63 @@ SHOW STATUS LIKE 'slave_received_heartbeats';
 Variable_name	Value
 Slave_received_heartbeats	0
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
 SELECT SLAVE_HEARTBEAT_TIMEOUT = 0 AS Result;
 Result
 0
 
 *** Min slave_heartbeat_timeout ***
-CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=0.001;
+CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=0.001, MASTER_USE_GTID=NO;
 SHOW GLOBAL STATUS LIKE 'slave_heartbeat_period';
 Variable_name	Value
 Slave_heartbeat_period	0.001
 RESET SLAVE;
-CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=0.0009;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=0.0009, MASTER_USE_GTID=NO;
 Warnings:
 Warning	1703	The requested value for the heartbeat period is less than 1 millisecond. The value is reset to 0, meaning that heartbeating will effectively be disabled
 SHOW GLOBAL STATUS LIKE 'slave_heartbeat_period';
 Variable_name	Value
 Slave_heartbeat_period	0.000
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
 
 *** Max slave_heartbeat_timeout ***
-CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=4294967;
+CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=4294967, MASTER_USE_GTID=NO;
 Warnings:
 Warning	1704	The requested value for the heartbeat period exceeds the value of `slave_net_timeout' seconds. A sensible value for the period should be less than the timeout
 SHOW GLOBAL STATUS LIKE 'slave_heartbeat_period';
 Variable_name	Value
 Slave_heartbeat_period	4294967.000
 RESET SLAVE;
-CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=4294968;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=4294968, MASTER_USE_GTID=NO;
 ERROR HY000: The requested value for the heartbeat period is either negative or exceeds the maximum allowed (4294967 seconds)
 RESET SLAVE;
-CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=8589935;
+CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=8589935, MASTER_USE_GTID=NO;
 ERROR HY000: The requested value for the heartbeat period is either negative or exceeds the maximum allowed (4294967 seconds)
 RESET SLAVE;
-CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=4294967296;
+CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=4294967296, MASTER_USE_GTID=NO;
 ERROR HY000: The requested value for the heartbeat period is either negative or exceeds the maximum allowed (4294967 seconds)
 RESET SLAVE;
 
 *** Misc incorrect values ***
-CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD='-1';
-ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near ''-1'' at line 1
+CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD='-1', MASTER_USE_GTID=NO;
+ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near ''-1', MASTER_USE_GTID=NO' at line 1
 RESET SLAVE;
-CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD='123abc';
-ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near ''123abc'' at line 1
+CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD='123abc', MASTER_USE_GTID=NO;
+ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near ''123abc', MASTER_USE_GTID=NO' at line 1
 RESET SLAVE;
-CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD='';
-ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '''' at line 1
+CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD='', MASTER_USE_GTID=NO;
+ERROR 42000: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near ''', MASTER_USE_GTID=NO' at line 1
 RESET SLAVE;
 
 *** Running slave ***
-CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=0.1;
+CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=0.1, MASTER_USE_GTID=NO;
 include/start_slave.inc
 connection master;
 connection slave;
@@ -241,7 +268,9 @@ Warnings:
 Warning	1105	Event scheduler is switched off, use SET GLOBAL event_scheduler=ON to enable it.
 connection slave;
 RESET SLAVE;
-CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=5;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=5, MASTER_USE_GTID=NO;
 include/start_slave.inc
 connection master;
 SET @@global.event_scheduler=1;
@@ -257,12 +286,14 @@ connection slave;
 *** Flush logs on slave ***
 STOP SLAVE;
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
 DROP TABLE t1;
 connection master;
 DROP TABLE t1;
 RESET MASTER;
 connection slave;
-CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=0.5;
+CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=0.5, MASTER_USE_GTID=NO;
 include/start_slave.inc
 Heartbeat events are received while rotation of relay logs (1 means 'yes'): 1
 
@@ -272,8 +303,10 @@ SET @@global.slave_compressed_protocol=1;
 connection slave;
 include/stop_slave.inc
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
 SET @@global.slave_compressed_protocol=1;
-CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=0.1;
+CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=0.1, MASTER_USE_GTID=NO;
 include/start_slave.inc
 Heartbeat event received
 SET @@global.slave_compressed_protocol=0;
@@ -284,7 +317,9 @@ SET @@global.slave_compressed_protocol=0;
 connection slave;
 STOP SLAVE;
 RESET SLAVE;
-CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=0.1;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=0.1, MASTER_USE_GTID=NO;
 include/start_slave.inc
 connection master;
 RESET MASTER;
@@ -295,7 +330,9 @@ Heartbeat events are received after reset of master (1 means 'yes'): 1
 connection slave;
 STOP SLAVE;
 RESET SLAVE;
-CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=0.1;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_HOST='127.0.0.1', MASTER_PORT=MASTER_PORT, MASTER_USER='root', MASTER_CONNECT_RETRY=20, MASTER_HEARTBEAT_PERIOD=0.1, MASTER_USE_GTID=NO;
 include/start_slave.inc
 Heartbeat event received
 include/rpl_restart_server.inc [server_number=1]
@@ -304,15 +341,17 @@ Heartbeat event received
 
 *** Circular replication ***
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
 include/stop_slave.inc
 include/rpl_change_topology.inc [new topology=1->2->1]
 connection master;
-CHANGE MASTER TO MASTER_HEARTBEAT_PERIOD=1;
+CHANGE MASTER TO MASTER_HEARTBEAT_PERIOD=1, MASTER_USE_GTID=NO;
 include/start_slave.inc
 CREATE TABLE t1 (a INT PRIMARY KEY, b VARCHAR(10));
 INSERT INTO t1 VALUES(1, 'on master');
 connection slave;
-CHANGE MASTER TO MASTER_HEARTBEAT_PERIOD=0.1;
+CHANGE MASTER TO MASTER_HEARTBEAT_PERIOD=0.1, MASTER_USE_GTID=NO;
 include/start_slave.inc
 INSERT INTO t1 VALUES(2, 'on slave');
 connection master;

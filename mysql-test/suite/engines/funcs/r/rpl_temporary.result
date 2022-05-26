@@ -3,6 +3,9 @@ SET sql_log_bin = 1;
 include/master-slave.inc
 [connection master]
 connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 reset master;
 connection master;
 DROP TABLE IF EXISTS t1;
@@ -167,9 +170,14 @@ connection slave;
 include/stop_slave.inc
 connection master;
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
 -- Bug#43748
 -- make a user on the slave that can list but not kill system threads.
 connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 FLUSH PRIVILEGES;
 GRANT USAGE   ON *.* TO user43748@127.0.0.1 IDENTIFIED BY 'meow';
 GRANT PROCESS ON *.* TO user43748@127.0.0.1;

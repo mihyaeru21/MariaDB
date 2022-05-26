@@ -1,5 +1,10 @@
 --source include/rpl_reset.inc
 
+connection slave;
+source include/stop_slave.inc;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+source include/start_slave.inc;
+
 connection master;
 eval CREATE TABLE t1 (a INT, b LONG) ENGINE=$engine;
 INSERT INTO t1 VALUES (1,1), (2,2);

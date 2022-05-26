@@ -31,7 +31,7 @@ exec $XTRABACKUP $XTRABACKUP_ARGS >$XTRABACKUP_OUT;
 rmdir $targetdir;
 
 --echo
-CHANGE MASTER TO MASTER_HOST='localhost', MASTER_PORT=10000;
+CHANGE MASTER TO MASTER_HOST='localhost', MASTER_PORT=10000, master_use_gtid=no;
 --disable_result_log
 exec $XTRABACKUP $XTRABACKUP_ARGS >$XTRABACKUP_OUT;
 --enable_result_log
@@ -41,7 +41,7 @@ exec $XTRABACKUP $XTRABACKUP_ARGS >$XTRABACKUP_OUT;
 rmdir $targetdir;
 
 --echo
-CHANGE MASTER 'master2' TO MASTER_HOST='localhost', MASTER_PORT=10002;
+CHANGE MASTER 'master2' TO MASTER_HOST='localhost', MASTER_PORT=10002, master_use_gtid=no;
 --disable_result_log
 exec $XTRABACKUP $XTRABACKUP_ARGS >$XTRABACKUP_OUT;
 --enable_result_log

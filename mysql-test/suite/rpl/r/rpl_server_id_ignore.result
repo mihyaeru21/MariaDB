@@ -1,6 +1,11 @@
 include/master-slave.inc
 [connection master]
 connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
+connection master;
+connection slave;
 master_id: 1
 stop slave;
 *** --replicate-same-server-id and change master option can clash ***
@@ -12,6 +17,9 @@ change master to IGNORE_SERVER_IDS= (10, 100);
 *** must be 10, 100 ***
 ignore server id list: 10, 100
 reset slave;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 *** must be empty due to reset slave ***
 ignore server id list: 10, 100
 change master to IGNORE_SERVER_IDS= (10, 100);
@@ -34,7 +42,9 @@ Tables_in_test
 stop slave;
 include/wait_for_slave_to_stop.inc
 reset slave;
-change master to IGNORE_SERVER_IDS= (10, 100);
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+change master to IGNORE_SERVER_IDS= (10, 100), MASTER_USE_GTID=NO;
 *** the list must remain (10, 100) after reset slave ***
 change master to IGNORE_SERVER_IDS= ();
 *** must be empty due to IGNORE_SERVER_IDS empty list ***

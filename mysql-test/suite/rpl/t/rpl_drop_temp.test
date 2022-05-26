@@ -6,6 +6,12 @@
 source include/have_binlog_format_mixed_or_statement.inc;
 source include/master-slave.inc;
 
+--connection slave
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+--connection master
+
 --disable_warnings
 create database if not exists mysqltest;
 --enable_warnings
@@ -69,6 +75,11 @@ sync_slave_with_master;
 #
 
 --source include/rpl_reset.inc
+
+--connection slave
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
 --connection master
 
 CREATE TABLE t1 ( i INT );

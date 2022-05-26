@@ -74,6 +74,12 @@ let $binformat = `SHOW VARIABLES LIKE '%binlog_format%'`;
 --echo
 --echo ***** Testing more columns on the Master *****
 --echo
+
+connection slave;
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+
 connection master;
 eval CREATE TABLE t1 (f1 INT, f2 INT, f3 INT PRIMARY KEY, f4 CHAR(20),
                       /* extra */
@@ -451,6 +457,7 @@ connection master;
 --echo
 STOP SLAVE;
 RESET SLAVE;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 --echo
 --echo ** create table slave side **
 eval CREATE TABLE t10 (a INT PRIMARY KEY, b BLOB, c CHAR(5)
@@ -508,6 +515,7 @@ sync_slave_with_master;
 --echo  *** Create t11 on slave  ***
 STOP SLAVE;
 RESET SLAVE;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 
 eval CREATE TABLE t11 (a INT PRIMARY KEY, b BLOB, c VARCHAR(254)
                        ) ENGINE=$engine_type;
@@ -564,6 +572,7 @@ sync_slave_with_master;
 --echo  *** Create t12 on slave  ***
 STOP SLAVE;
 RESET SLAVE;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 eval CREATE TABLE t12 (a INT PRIMARY KEY, b BLOB, c BLOB
                        ) ENGINE=$engine_type;
 
@@ -615,6 +624,7 @@ sync_slave_with_master;
 --echo *** Create t14 on slave  ***
 STOP SLAVE;
 RESET SLAVE;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 eval CREATE TABLE t14 (c1 INT PRIMARY KEY, c4 BLOB, c5 CHAR(5)
                        ) ENGINE=$engine_type;
 
@@ -690,6 +700,7 @@ connection slave;
 
 STOP SLAVE;
 RESET SLAVE;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 
 --echo
 --echo *** Drop t14  ***
@@ -712,6 +723,7 @@ START SLAVE;
 --echo *** Create t15 on slave  ***
 STOP SLAVE;
 RESET SLAVE;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 eval CREATE TABLE t15 (c1 INT PRIMARY KEY, c4 BLOB, c5 CHAR(5)
                        ) ENGINE=$engine_type;
 
@@ -754,6 +766,7 @@ connection slave;
 --source include/wait_for_slave_sql_error.inc
 STOP SLAVE;
 RESET SLAVE;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 
 --echo
 --echo *** Drop t15  ***
@@ -776,6 +789,7 @@ START SLAVE;
 --echo *** Create t16 on slave  ***
 STOP SLAVE;
 RESET SLAVE;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 eval CREATE TABLE t16 (c1 INT PRIMARY KEY, c4 BLOB, c5 CHAR(5)
                        ) ENGINE=$engine_type;
 
@@ -831,6 +845,7 @@ connection slave;
 --source include/wait_for_slave_sql_error.inc
 STOP SLAVE;
 RESET SLAVE;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 
 --echo
 --echo *** Drop t16  ***
@@ -854,6 +869,7 @@ START SLAVE;
 --echo *** Create t17 on slave  ***
 STOP SLAVE;
 RESET SLAVE;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 eval CREATE TABLE t17 (c1 INT PRIMARY KEY, c4 BLOB, c5 CHAR(5)
                        ) ENGINE=$engine_type;
 
@@ -920,6 +936,7 @@ sync_slave_with_master;
 
 STOP SLAVE;
 RESET SLAVE;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 eval CREATE TABLE t18 (c1 INT PRIMARY KEY, c4 BLOB, c5 CHAR(5)
                        ) ENGINE=$engine_type;
 
@@ -983,6 +1000,7 @@ sync_slave_with_master;
 --echo *** Create t5 on slave  ***
 STOP SLAVE;
 RESET SLAVE;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 eval CREATE TABLE t5 (c1 INT PRIMARY KEY, c4 BLOB, c5 CHAR(5)
                        ) ENGINE=$engine_type;
 

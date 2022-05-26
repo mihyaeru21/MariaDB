@@ -1,5 +1,10 @@
 include/master-slave.inc
 [connection master]
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
+connection master;
 call mtr.add_suppression("Slave I/O: Got a packet bigger than 'slave_max_allowed_packet' bytes, .*error.* 1153");
 call mtr.add_suppression("Log entry on master is longer than slave_max_allowed_packet");
 drop database if exists DB_NAME_OF_MAX_LENGTH_AKA_NAME_LEN_64_BYTES_____________________;
@@ -49,6 +54,12 @@ include/wait_for_slave_io_error.inc [errno=1153]
 Last_IO_Error = 'Got a packet bigger than 'slave_max_allowed_packet' bytes'
 include/stop_slave_sql.inc
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 connection master;
 DROP TABLE t1;
 connection slave;
@@ -62,6 +73,9 @@ include/wait_for_slave_io_error.inc [errno=1153]
 Last_IO_Error = 'Got a packet bigger than 'slave_max_allowed_packet' bytes'
 STOP SLAVE;
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 connection master;
 RESET MASTER;
 SET @max_allowed_packet_0= @@session.max_allowed_packet;
@@ -80,4 +94,7 @@ SET @@global.slave_max_allowed_packet= 1073741824;
 connection slave;
 DROP TABLE t1;
 RESET SLAVE;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 include/rpl_end.inc

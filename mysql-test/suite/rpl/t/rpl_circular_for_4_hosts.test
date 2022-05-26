@@ -23,6 +23,28 @@ let $keep_connection= 1;
 --source include/rpl_init.inc
 --echo
 
+#--connection server_1
+#--source include/stop_slave.inc
+#CHANGE MASTER TO MASTER_USE_GTID=NO;
+#--connection server_2
+#--source include/stop_slave.inc
+#CHANGE MASTER TO MASTER_USE_GTID=NO;
+#--connection server_3
+#--source include/stop_slave.inc
+#CHANGE MASTER TO MASTER_USE_GTID=NO;
+#--connection server_4
+#--source include/stop_slave.inc
+#CHANGE MASTER TO MASTER_USE_GTID=NO;
+#--connection server_1
+#--source include/start_slave.inc
+#--connection server_2
+#--source include/start_slave.inc
+#--connection server_3
+#--source include/start_slave.inc
+#--connection server_4
+#--source include/start_slave.inc
+#--connection server_1
+
 #set auto inc variables at each server
 --let $_rpl_server= $rpl_server_count
 while ($_rpl_server)
@@ -202,6 +224,7 @@ RESET MASTER;
 --let $pos_d= query_get_value(SHOW MASTER STATUS, Position, 1)
 --connection server_4
 RESET SLAVE;
+#CHANGE MASTER TO MASTER_USE_GTID=NO;
 --let $rpl_topology= 1->2->3->4->1
 --let $rpl_master_log_file= 4:$file_d
 --let $rpl_master_log_pos= 4:$pos_d

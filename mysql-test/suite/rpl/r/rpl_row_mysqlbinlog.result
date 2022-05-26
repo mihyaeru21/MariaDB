@@ -1,5 +1,10 @@
 include/master-slave.inc
 [connection master]
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
+connection master;
 ---Setup Section  --
 set timestamp=1000000000;
 CREATE TABLE t1(word VARCHAR(20));
@@ -92,6 +97,9 @@ connection master;
 reset master;
 connection slave;
 reset slave;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 start slave;
 include/wait_for_slave_to_start.inc
 connection master;
@@ -222,6 +230,9 @@ connection master;
 reset master;
 connection slave;
 reset slave;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 start slave;
 include/wait_for_slave_to_start.inc
 connection master;
@@ -357,6 +368,9 @@ connection master;
 reset master;
 connection slave;
 reset slave;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 start slave;
 include/wait_for_slave_to_start.inc
 connection master;

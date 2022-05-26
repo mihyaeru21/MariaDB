@@ -5,6 +5,9 @@ call mtr.add_suppression("Slave: Can\'t find record in \'t1\' error.* .*");
 call mtr.add_suppression("Can't find record in 't.'");
 connection slave;
 SET @old_slave_exec_mode= @@global.slave_exec_mode;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 ######## Run with slave_exec_mode=STRICT ########
 SET @@global.slave_exec_mode = 'STRICT';
 ==== Initialize ====
@@ -71,6 +74,12 @@ connection master;
 DROP TABLE t1;
 connection slave;
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 ######## Run with slave_exec_mode=IDEMPOTENT ########
 set @@global.slave_exec_mode= 'IDEMPOTENT';
 ==== Initialize ====

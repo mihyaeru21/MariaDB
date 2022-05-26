@@ -1,5 +1,10 @@
 include/master-slave.inc
 [connection master]
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
+connection master;
 DROP DATABASE IF EXISTS mysqltest;
 CREATE DATABASE IF NOT EXISTS mysqltest;
 USE mysqltest;
@@ -73,6 +78,12 @@ DROP TABLE t3;
 # binlogged if the table already exists.
 # After the worklog, some bugs will disappear automotically.
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 
 # Case 1: BUG#47132
 connection master;

@@ -12,13 +12,13 @@ SELECT @@global.gtid_slave_pos;
 line
 [00] YYYY-MM-DD hh:mm:ss Failed to get master binlog coordinates from SHOW SLAVE STATUS.This means that the server is not a replication slave. Ignoring the --slave-info option
 
-CHANGE MASTER TO MASTER_HOST='localhost', MASTER_PORT=10000;
+CHANGE MASTER TO MASTER_HOST='localhost', MASTER_PORT=10000, master_use_gtid=no;
 lineno	line
 1	CHANGE MASTER TO MASTER_LOG_FILE='', MASTER_LOG_POS=<NUM>;
 line
 [00] YYYY-MM-DD hh:mm:ss MySQL slave binlog position: master '' filename '' position '0'
 
-CHANGE MASTER 'master2' TO MASTER_HOST='localhost', MASTER_PORT=10002;
+CHANGE MASTER 'master2' TO MASTER_HOST='localhost', MASTER_PORT=10002, master_use_gtid=no;
 lineno	line
 1	CHANGE MASTER TO MASTER_LOG_FILE='', MASTER_LOG_POS=<NUM>;
 2	CHANGE MASTER 'master2' TO MASTER_LOG_FILE='', MASTER_LOG_POS=<NUM>;
@@ -51,8 +51,12 @@ line
 [00] YYYY-MM-DD hh:mm:ss MySQL slave binlog position: gtid_slave_pos '<NUM-NUM-NUM>,<NUM-NUM-NUM>'; master '' master_use_gtid = slave_pos; master 'master2' filename '' position '0'; master 'master3' master_use_gtid = slave_pos; master 'master4' filename '' position '0'; master 'master5' master_use_gtid = slave_pos
 RESET SLAVE ALL;
 RESET SLAVE 'master2' ALL;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
 RESET SLAVE 'master3' ALL;
 RESET SLAVE 'master4' ALL;
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
 RESET SLAVE 'master5' ALL;
 #
 # End of 10.2 tests

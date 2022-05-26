@@ -11,6 +11,7 @@ connection slave;
 source include/have_innodb.inc;
 STOP SLAVE;
 --source include/wait_for_slave_to_stop.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 
 connection master;
 SET SESSION BINLOG_FORMAT=ROW;
@@ -56,6 +57,7 @@ SELECT * FROM t2;
 STOP SLAVE;
 --source include/wait_for_slave_to_stop.inc
 RESET SLAVE;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
 connection master;
 RESET MASTER;
 

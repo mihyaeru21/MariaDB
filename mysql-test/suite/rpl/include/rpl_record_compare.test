@@ -5,6 +5,12 @@
 -- echo ## case #1 - last_null_bit_pos==0 in record_compare without X bit
 
 -- source include/rpl_reset.inc
+
+-- connection slave
+-- source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+-- source include/start_slave.inc
+
 -- connection master
 
 -- eval CREATE TABLE t1 (c1 bigint(20) DEFAULT 0, c2 bigint(20) DEFAULT 0, c3 bigint(20) DEFAULT 0, c4 varchar(1) DEFAULT '', c5 bigint(20) DEFAULT 0, c6 bigint(20) DEFAULT 0, c7 bigint(20) DEFAULT 0, c8 bigint(20) DEFAULT 0) ENGINE=$engine DEFAULT CHARSET=latin1
@@ -26,6 +32,12 @@ DROP TABLE t1;
 -- echo ## case #1.1 - last_null_bit_pos==0 in record_compare with X bit
 -- echo ##             (1 column less and no varchar)
 -- source include/rpl_reset.inc
+
+-- connection slave
+-- source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+-- source include/start_slave.inc
+
 -- connection master
 
 -- eval CREATE TABLE t1 (c1 bigint(20) DEFAULT 0, c2 bigint(20) DEFAULT 0, c3 bigint(20) DEFAULT 0, c4 bigint(20) DEFAULT 0, c5 bigint(20) DEFAULT 0, c6 bigint(20) DEFAULT 0, c7 bigint(20) DEFAULT 0) ENGINE=$engine DEFAULT CHARSET=latin1
@@ -47,6 +59,12 @@ DROP TABLE t1;
 -- echo ## case #2 - X bit is wrongly set.
 
 -- source include/rpl_reset.inc
+
+-- connection slave
+-- source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+-- source include/start_slave.inc
+
 -- connection master
 
 -- eval CREATE TABLE t1 (c1 int, c2 varchar(1) default '') ENGINE=$engine DEFAULT CHARSET= latin1

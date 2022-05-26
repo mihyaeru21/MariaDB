@@ -1269,4 +1269,10 @@ let $target_temp_format=;
 
 
 --source include/rpl_reset.inc
+connection slave;
+source include/stop_slave.inc;
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+source include/start_slave.inc;
+connection master;
+
 enable_query_log;

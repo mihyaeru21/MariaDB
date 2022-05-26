@@ -28,6 +28,12 @@
 source include/have_binlog_format_statement.inc;
 source include/master-slave.inc;
 
+--connection slave
+--source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+--source include/start_slave.inc
+--connection master
+
 CALL mtr.add_suppression("Unsafe statement written to the binary log using statement format since BINLOG_FORMAT = STATEMENT");
 call mtr.add_suppression("Slave SQL.*Request to stop slave SQL Thread received while applying a group that has non-transactional changes; waiting for completion of the group");
 
@@ -197,6 +203,11 @@ disconnect extra2;
 #
 
 --source include/rpl_reset.inc
+
+-- connection slave
+-- source include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+-- source include/start_slave.inc
 
 -- connection master
 SET @old_log_output= @@log_output;

@@ -2,6 +2,9 @@ include/master-slave.inc
 [connection master]
 connection slave;
 connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 connection master;
 CREATE TABLE t1 (C1 CHAR(1), C2 CHAR(1), INDEX (C1)) ENGINE = 'INNODB'  ;
 SELECT * FROM t1;
@@ -470,6 +473,12 @@ connection master;
 DELETE FROM t1;
 connection slave;
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 connection master;
 INSERT INTO t1 VALUES ('K','K'), ('L','L'), ('M','M');
 connection slave;
@@ -553,6 +562,12 @@ call mtr.add_suppression("Slave SQL.*Could not execute Delete_rows event on tabl
 call mtr.add_suppression("Slave SQL.*Column 1 of table .test.t.. cannot be converted from type.*, error.* 1677");
 call mtr.add_suppression("Can't find record in 't1'");
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 [expecting slave to replicate correctly]
 connection master;
 INSERT INTO t4 VALUES (1, "", 1);
@@ -567,6 +582,12 @@ connection slave;
 include/wait_for_slave_sql_error.inc [errno=1677]
 Last_SQL_Error = 'Column 1 of table 'test.t5' cannot be converted from type 'char(765 octets)' to type 'char(48 octets) character set utf8mb3''
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 [expecting slave to stop]
 connection master;
 INSERT INTO t6 VALUES (1, "", 1);
@@ -575,6 +596,12 @@ connection slave;
 include/wait_for_slave_sql_error.inc [errno=1677]
 Last_SQL_Error = 'Column 1 of table 'test.t6' cannot be converted from type 'char(765 octets)' to type 'char(384 octets) character set utf8mb3''
 include/rpl_reset.inc
+Warnings:
+Note	4190	RESET SLAVE is changing the current value of Using_Gtid from 'No' to its default value of 'Slave_Pos'
+connection slave;
+include/stop_slave.inc
+CHANGE MASTER TO MASTER_USE_GTID=NO;
+include/start_slave.inc
 [expecting slave to replicate correctly]
 connection master;
 INSERT INTO t7 VALUES (1, "", 1);
