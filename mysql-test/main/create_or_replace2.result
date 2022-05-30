@@ -62,7 +62,7 @@ drop table t1;
 # Test multi-byte characters in table name
 set names utf8;
 create table ❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎ (x int);
-ERROR HY000: Can't create table `test`.`❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎` (errno: 36 "File name too long")
+Got one of the listed errors
 create table tttttttttttttttttttttttt❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎ (x int);
 create table ttttttttttttttttttttttttt❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎ (x int);
 ERROR 42000: Incorrect table name 'ttttttttttttttttttttttttt❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎❎'

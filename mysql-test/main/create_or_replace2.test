@@ -70,7 +70,7 @@ let $MYSQLD_DATADIR= `SELECT @@datadir`;
 # Filename is too long because it is converted to @274e@274e@274e@274e...
 # so each '❎' is 5 bytes in filesystem, 51 x 5 = 255 bytes
 let $t= `select repeat('❎', 51)`;
---error ER_CANT_CREATE_TABLE
+--error ER_CANT_CREATE_TABLE, ER_BAD_DB_ERROR
 eval create table $t (x int);
 # OK with 64-characters table name, filesystem name is 40 x 5 + 24 = 224 bytes
 let $t= `select concat(repeat('t', 24), repeat('❎', 40))`;
