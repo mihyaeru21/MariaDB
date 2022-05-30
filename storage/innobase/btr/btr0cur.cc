@@ -7310,15 +7310,19 @@ btr_free_externally_stored_field(
 		    /* Rollback and inherited field */
 		    || (rollback
 			&& (mach_read_from_1(field_ref + BTR_EXTERN_LEN)
-			    & BTR_EXTERN_INHERITED_FLAG))
-		    || !(ext_block = buf_page_get(page_id_t(space_id, page_no),
-						  ext_zip_size,
-						  RW_X_LATCH, &mtr))) {
-
+			    & BTR_EXTERN_INHERITED_FLAG))) {
+skip_free:
 			/* Do not free */
 			mtr.commit();
 
 			return;
+		}
+
+		ext_block = buf_page_get(page_id_t(space_id, page_no),
+					 ext_zip_size, RW_X_LATCH, &mtr);
+
+		if (!ext_block) {
+			goto skip_free;
 		}
 
 		/* The buffer pool block containing the BLOB pointer is
