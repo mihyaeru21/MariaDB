@@ -3002,6 +3002,13 @@ buf_page_get_gen(
 {
   if (buf_block_t *block= recv_sys.recover(page_id))
   {
+    if (UNIV_UNLIKELY(block == reinterpret_cast<buf_block_t*>(-1)))
+    {
+    corrupted:
+      if (err)
+        *err= DB_CORRUPTION;
+      return nullptr;
+    }
     /* Recovery is a special case; we fix() before acquiring lock. */
     auto s= block->page.fix();
     ut_ad(s >= buf_page_t::FREED);
@@ -3016,10 +3023,8 @@ buf_page_get_gen(
     {
     got_freed_page:
       ut_ad(mode == BUF_GET_POSSIBLY_FREED || mode == BUF_PEEK_IF_IN_POOL);
-      if (err)
-        *err= DB_CORRUPTION;
       block->page.unfix();
-      return nullptr;
+      goto corrupted;
     }
     else if (must_merge &&
              fil_page_get_type(block->page.frame) == FIL_PAGE_INDEX &&
@@ -3603,6 +3608,10 @@ dberr_t buf_page_t::read_complete(const fil_node_t &node)
   ut_ad(zip_size() == node.space->zip_size());
   ut_ad(!!zip.ssize == !!zip.data);
 
+  ut_d(auto n=) buf_pool.n_pend_reads--;
+  ut_ad(n > 0);
+  buf_pool.stat.n_pages_read++;
+
   const byte *read_frame= zip.data ? zip.data : frame;
   ut_ad(read_frame);
 
@@ -3697,8 +3706,8 @@ release_page:
 
   const bool recovery= recv_recovery_is_on();
 
-  if (recovery)
-    recv_recover_page(node.space, this);
+  if (recovery && !recv_recover_page(node.space, this))
+    return DB_PAGE_CORRUPTED;
 
   const bool ibuf_may_exist= frame && !recv_no_ibuf_operations &&
     (!expected_id.space() || !is_predefined_tablespace(expected_id.space())) &&
@@ -3721,10 +3730,6 @@ release_page:
     set_ibuf_exist();
 
   lock.x_unlock(true);
-
-  ut_d(auto n=) buf_pool.n_pend_reads--;
-  ut_ad(n > 0);
-  buf_pool.stat.n_pages_read++;
 
   return DB_SUCCESS;
 }

@@ -1238,9 +1238,6 @@ void buf_pool_t::corrupted_evict(buf_page_t *bpage, uint32_t state)
 
   mysql_mutex_unlock(&mutex);
 
-  ut_d(auto n=) n_pend_reads--;
-  ut_ad(n > 0);
-
   recv_sys.free_corrupted_page(id);
 }
 
