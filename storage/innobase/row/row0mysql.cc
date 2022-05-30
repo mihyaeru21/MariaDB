@@ -2248,6 +2248,13 @@ row_mysql_table_id_reassign(
 	trx_t*		trx,
 	table_id_t*	new_id)
 {
+	if (!dict_sys.sys_tables || dict_sys.sys_tables->corrupted ||
+	    !dict_sys.sys_columns || dict_sys.sys_columns->corrupted ||
+	    !dict_sys.sys_indexes || dict_sys.sys_indexes->corrupted ||
+	    !dict_sys.sys_virtual || dict_sys.sys_virtual->corrupted) {
+		return DB_CORRUPTION;
+	}
+
 	dberr_t		err;
 	pars_info_t*	info	= pars_info_create();
 
@@ -2398,9 +2405,6 @@ row_discard_tablespace(
 	/* All persistent operations successful, update the
 	data dictionary memory cache. */
 
-	table->file_unreadable = true;
-	table->space = NULL;
-	table->flags2 |= DICT_TF2_DISCARDED;
 	dict_table_change_id_in_cache(table, new_id);
 
 	dict_index_t* index = UT_LIST_GET_FIRST(table->indexes);
@@ -2472,6 +2476,9 @@ rollback:
 
   It would be better to remove the integrity-breaking
   ALTER TABLE...DISCARD TABLESPACE operation altogether. */
+  table->file_unreadable= true;
+  table->space= nullptr;
+  table->flags2|= DICT_TF2_DISCARDED;
   err= row_discard_tablespace(trx, table);
   DBUG_EXECUTE_IF("ib_discard_before_commit_crash",
                   log_buffer_flush_to_disk(); DBUG_SUICIDE(););
@@ -2480,7 +2487,6 @@ rollback:
   trx->commit(deleted);
   const auto space_id= table->space_id;
   pfs_os_file_t d= fil_delete_tablespace(space_id);
-  table->space= nullptr;
   DBUG_EXECUTE_IF("ib_discard_after_commit_crash", DBUG_SUICIDE(););
   row_mysql_unlock_data_dictionary(trx);
 

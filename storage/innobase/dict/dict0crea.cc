@@ -1104,15 +1104,7 @@ dict_create_table_step(
 function_exit:
 	trx->error_state = err;
 
-	if (err == DB_SUCCESS) {
-		/* Ok: do nothing */
-
-	} else if (err == DB_LOCK_WAIT) {
-
-		return(NULL);
-	} else {
-		/* SQL error detected */
-
+	if (err != DB_SUCCESS) {
 		return(NULL);
 	}
 

@@ -380,6 +380,7 @@ unreadable:
 		ib::error() << "Table " << index->table->name
 			    << " has an unreadable root page";
 		index->table->corrupted = true;
+		index->table->file_unreadable = true;
 		return err;
 	}
 
@@ -6848,12 +6849,16 @@ btr_store_big_rec_extern_fields(
 	ut_ad(buf_block_get_frame(rec_block) == page_align(rec));
 	ut_a(dict_index_is_clust(index));
 
+	if (!fil_page_index_page_check(page_align(rec))) {
+		if (op != BTR_STORE_INSERT_BULK) {
+			return DB_PAGE_CORRUPTED;
+		}
+	}
+
 	btr_blob_log_check_t redo_log(pcur, btr_mtr, offsets, &rec_block,
 				      &rec, op);
 	page_zip = buf_block_get_page_zip(rec_block);
 	space_id = rec_block->page.id().space();
-	ut_a(fil_page_index_page_check(page_align(rec))
-	     || op == BTR_STORE_INSERT_BULK);
 
 	if (page_zip) {
 		int	err;

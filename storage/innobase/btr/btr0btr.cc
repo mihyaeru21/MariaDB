@@ -233,7 +233,8 @@ buf_block_t *btr_block_get(const dict_index_t &index,
   if (UNIV_LIKELY(block != nullptr))
   {
     if (!!page_is_comp(block->page.frame) != index.table->not_redundant() ||
-        btr_page_get_index_id(block->page.frame) != index.id)
+        btr_page_get_index_id(block->page.frame) != index.id ||
+        !fil_page_index_page_check(block->page.frame))
     {
       *err= DB_PAGE_CORRUPTED;
       block= nullptr;
