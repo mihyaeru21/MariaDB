@@ -659,14 +659,14 @@ index root page.
 bool btr_cur_instant_root_init(dict_index_t* index, const page_t* page)
 {
 	ut_ad(!index->is_dummy);
-	ut_ad(fil_page_index_page_check(page));
-	ut_ad(!page_has_siblings(page));
-	ut_ad(page_get_space_id(page) == index->table->space_id);
-	ut_ad(page_get_page_no(page) == index->page);
-	ut_ad(!page_is_comp(page) == !dict_table_is_comp(index->table));
 	ut_ad(index->is_primary());
 	ut_ad(!index->is_instant());
 	ut_ad(index->table->supports_instant());
+
+	if (page_has_siblings(page)) {
+		return true;
+	}
+
 	/* This is normally executed as part of btr_cur_instant_init()
 	when dict_load_table_one() is loading a table definition.
 	Other threads should not access or modify the n_core_null_bytes,
@@ -677,13 +677,14 @@ bool btr_cur_instant_root_init(dict_index_t* index, const page_t* page)
 
 	switch (fil_page_get_type(page)) {
 	default:
-		ut_ad("wrong page type" == 0);
 		return true;
 	case FIL_PAGE_INDEX:
 		/* The field PAGE_INSTANT is guaranteed 0 on clustered
 		index root pages of ROW_FORMAT=COMPACT or
 		ROW_FORMAT=DYNAMIC when instant ADD COLUMN is not used. */
-		ut_ad(!page_is_comp(page) || !page_get_instant(page));
+		if (page_is_comp(page) && page_get_instant(page)) {
+			return true;
+		}
 		index->n_core_null_bytes = static_cast<uint8_t>(
 			UT_BITS_IN_BYTES(unsigned(index->n_nullable)));
 		return false;

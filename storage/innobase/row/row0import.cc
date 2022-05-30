@@ -3204,14 +3204,6 @@ static dberr_t handle_instant_metadata(dict_table_t *table,
   {
     dict_index_t *index= dict_table_get_first_index(table);
 
-    auto tmp1= table->space_id;
-    table->space_id= page_get_space_id(page.get());
-    SCOPE_EXIT([tmp1, table]() { table->space_id= tmp1; });
-
-    auto tmp2= index->page;
-    index->page= page_get_page_no(page.get());
-    SCOPE_EXIT([tmp2, index]() { index->page= tmp2; });
-
     if (!page_is_comp(page.get()) != !dict_table_is_comp(table))
     {
       ib_errf(current_thd, IB_LOG_LEVEL_ERROR, ER_TABLE_SCHEMA_MISMATCH,
@@ -3220,7 +3212,7 @@ static dberr_t handle_instant_metadata(dict_table_t *table,
     }
 
     if (btr_cur_instant_root_init(index, page.get()))
-      return DB_ERROR;
+      return DB_CORRUPTION;
 
     ut_ad(index->n_core_null_bytes != dict_index_t::NO_CORE_NULL_BYTES);
 

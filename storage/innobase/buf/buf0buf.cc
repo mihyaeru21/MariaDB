@@ -586,9 +586,6 @@ buf_page_is_corrupted(
 	const byte*		read_buf,
 	ulint			fsp_flags)
 {
-#ifndef UNIV_INNOCHECKSUM
-	DBUG_EXECUTE_IF("buf_page_import_corrupt_failure", return(true); );
-#endif
 	if (fil_space_t::full_crc32(fsp_flags)) {
 		bool compressed = false, corrupted = false;
 		const uint size = buf_page_full_crc32_size(
