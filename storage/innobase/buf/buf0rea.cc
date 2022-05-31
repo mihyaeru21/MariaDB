@@ -322,6 +322,8 @@ nothing_read:
 	*err = fio.err;
 
 	if (UNIV_UNLIKELY(fio.err != DB_SUCCESS)) {
+		ut_d(auto n=) buf_pool.n_pend_reads--;
+		ut_ad(n > 0);
 		buf_pool.corrupted_evict(bpage, buf_page_t::READ_FIX);
 	} else if (sync) {
 		thd_wait_end(NULL);
