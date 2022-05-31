@@ -318,7 +318,7 @@ if [ -n "$SSLMODE" -a "$SSLMODE" != 'DISABLED' ]; then
 fi
 
 readonly SECRET_TAG='secret'
-readonly BYPASS_TAG='secret /bypass'
+readonly BYPASS_TAG='bypass'
 
 SST_PID="$WSREP_SST_OPT_DATA/wsrep_sst.pid"
 
@@ -826,13 +826,8 @@ EOF
     fi
 
     if [ -n "$MY_SECRET" ]; then
-        # Select the "secret" tag whose value does not start
-        # with a slash symbol. All new tags must to start with
-        # the space and the slash symbol after the word "secret" -
-        # to be removed by older versions of the SST scripts:
-        SECRET=$(grep -m1 -E "^$SECRET_TAG[[:space:]]+[^/]" \
-                      -- "$MAGIC_FILE" || :)
         # Check donor supplied secret:
+        SECRET=$(grep -m1 -E "^$SECRET_TAG[[:space:]]" "$MAGIC_FILE" || :)
         SECRET=$(trim_string "${SECRET#$SECRET_TAG}")
         if [ "$SECRET" != "$MY_SECRET" ]; then
             wsrep_log_error "Donor does not know my secret!"
@@ -842,7 +837,8 @@ EOF
     fi
 
     if [ $WSREP_SST_OPT_BYPASS -eq 0 ]; then
-        if grep -m1 -qE "^$BYPASS_TAG([[space]]+.*)?\$" -- "$MAGIC_FILE"; then
+        if grep -m1 -qE "^$BYPASS_TAG([[:space:]]+.*)?\$" "$MAGIC_FILE"
+        then
             readonly WSREP_SST_OPT_BYPASS=1
             readonly WSREP_TRANSFER_TYPE='IST'
         fi
@@ -926,7 +922,7 @@ EOF
     fi
 
     # Remove special tags from the magic file, and from the output:
-    coords=$(grep -v -E "^$SECRET_TAG[[:space:]]" -- "$MAGIC_FILE")
+    coords=$(head -n1 "$MAGIC_FILE")
     wsrep_log_info "Galera co-ords from recovery: $coords"
     echo "$coords" # Output : UUID:seqno wsrep_gtid_domain_id
 fi
