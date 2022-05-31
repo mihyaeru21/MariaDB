@@ -7330,6 +7330,7 @@ SHOW_VAR status_vars[]= {
   {"Handler_update",           (char*) offsetof(STATUS_VAR, ha_update_count), SHOW_LONG_STATUS},
   {"Handler_write",            (char*) offsetof(STATUS_VAR, ha_write_count), SHOW_LONG_STATUS},
   {"Key",                      (char*) &show_default_keycache, SHOW_FUNC},
+  {"limited_search_calls",     (char*) offsetof(STATUS_VAR, limited_search_calls), SHOW_LONG_STATUS},
   {"Last_query_cost",          (char*) offsetof(STATUS_VAR, last_query_cost), SHOW_DOUBLE_STATUS},
 #ifndef DBUG_OFF
   {"malloc_calls",             (char*) &malloc_calls, SHOW_LONG},

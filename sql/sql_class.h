@@ -934,6 +934,7 @@ typedef struct system_status_var
   ulong filesort_rows_;
   ulong filesort_scan_count_;
   ulong filesort_pq_sorts_;
+  ulong limited_search_calls;
 
   /* Features used */
   ulong feature_custom_aggregate_functions; /* +1 when custom aggregate
