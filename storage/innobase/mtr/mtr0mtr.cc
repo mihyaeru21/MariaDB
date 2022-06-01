@@ -353,15 +353,98 @@ struct DebugCheck {
 };
 #endif
 
+/** Prepare to insert a modified blcok into flush_list.
+@param lsn start LSN of the mini-transaction
+@return insert position for insert_into_flush_list() */
+inline buf_page_t *buf_pool_t::prepare_insert_into_flush_list(lsn_t lsn)
+  noexcept
+{
+#ifndef SUX_LOCK_GENERIC
+  ut_ad(recv_recovery_is_on() || log_sys.latch.is_locked());
+#endif
+  ut_ad(lsn >= log_sys.last_checkpoint_lsn);
+  mysql_mutex_assert_owner(&flush_list_mutex);
+  static_assert(log_t::FIRST_LSN >= 2, "compatibility");
+
+rescan:
+  buf_page_t *prev= UT_LIST_GET_FIRST(flush_list);
+  if (prev)
+  {
+    lsn_t om= prev->oldest_modification();
+    if (om == 1)
+    {
+      delete_from_flush_list(prev);
+      goto rescan;
+    }
+    ut_ad(om > 2);
+    if (om <= lsn)
+      return nullptr;
+    while (buf_page_t *next= UT_LIST_GET_NEXT(list, prev))
+    {
+      om= next->oldest_modification();
+      if (om == 1)
+      {
+        delete_from_flush_list(next);
+        continue;
+      }
+      ut_ad(om > 2);
+      if (om <= lsn)
+        break;
+      else
+        prev= next;
+    }
+    flush_hp.adjust(prev);
+  }
+
+  return prev;
+}
+
+/** Insert a modified block into the flush list.
+@param prev     insert position (from prepare_insert_into_flush_list())
+@param block    modified block
+@param lsn      start LSN of the mini-transaction that modified the block
+@return whether the block was added */
+inline bool buf_pool_t::insert_into_flush_list(buf_page_t *prev,
+                                               buf_block_t *block, lsn_t lsn)
+  noexcept
+{
+  ut_ad(!fsp_is_system_temporary(block->page.id().space()));
+  mysql_mutex_assert_owner(&flush_list_mutex);
+
+  if (const lsn_t old= block->page.oldest_modification())
+  {
+    if (old > 1)
+      return false;
+    flush_hp.adjust(&block->page);
+    UT_LIST_REMOVE(flush_list, &block->page);
+  }
+  else
+    stat.flush_list_bytes+= block->physical_size();
+  ut_ad(stat.flush_list_bytes <= curr_pool_size);
+
+  block->page.set_oldest_modification(lsn);
+  MEM_CHECK_DEFINED(block->page.zip.data
+                    ? block->page.zip.data : block->page.frame,
+                    block->physical_size());
+
+  if (prev)
+    UT_LIST_INSERT_AFTER(flush_list, prev, &block->page);
+  else
+    UT_LIST_ADD_FIRST(flush_list, &block->page);
+  return true;
+}
+
 /** Update modified pages of the mini-transaction. */
 struct ReleaseModified
 {
+  buf_page_t *const prev;
   const lsn_t start, end;
-  mutable size_t modified;
-  ReleaseModified(lsn_t start, lsn_t end) : start(start), end(end), modified(0)
+  mutable size_t modified= 0;
+  ReleaseModified(buf_page_t *prev, lsn_t start, lsn_t end) :
+    prev(prev), start(start), end(end)
   {
-    ut_ad(start);
-    ut_ad(end);
+    ut_ad(start > 2);
+    ut_ad(end >= start);
   }
 
   /** @return true always */
@@ -383,13 +466,7 @@ struct ReleaseModified
     if (UNIV_LIKELY_NULL(b->page.zip.data))
       memcpy_aligned<8>(FIL_PAGE_LSN + b->page.zip.data,
                         FIL_PAGE_LSN + b->page.frame, 8);
-
-    const lsn_t oldest_modification= b->page.oldest_modification();
-
-    if (oldest_modification > 1)
-      ut_ad(oldest_modification <= start);
-    else
-      buf_pool.insert_into_flush_list(b, start);
+    buf_pool.insert_into_flush_list(prev, b, start);
     return true;
   }
 };
@@ -463,6 +540,25 @@ struct ReleaseSimple
   }
 };
 
+ATTRIBUTE_COLD __attribute__((noinline))
+/** Insert a modified block into buf_pool.flush_list on IMPORT TABLESPACE. */
+static void insert_imported(buf_block_t *block)
+{
+  ut_d(const auto s= block->page.state());
+  ut_ad(s > buf_page_t::FREED);
+  ut_ad(s < buf_page_t::READ_FIX);
+  if (block->page.oldest_modification() <= 1)
+  {
+    log_sys.latch.rd_lock(SRW_LOCK_CALL);
+    const lsn_t lsn= log_sys.last_checkpoint_lsn;
+    mysql_mutex_lock(&buf_pool.flush_list_mutex);
+    buf_pool.insert_into_flush_list
+      (buf_pool.prepare_insert_into_flush_list(lsn), block, lsn);
+    log_sys.latch.rd_unlock();
+    mysql_mutex_unlock(&buf_pool.flush_list_mutex);
+  }
+}
+
 /** Release latches to already pages when no log was written.
 This is like ReleaseSimple, but it cover pages of the temporary tablespace
 as well as pages modified during IMPORT TABLESPACE. */
@@ -502,18 +598,7 @@ struct ReleaseUnlogged
         if (UNIV_LIKELY(block->page.id() >= end_page_id))
           block->page.set_temp_modified();
         else
-        {
-          ut_d(const auto s= block->page.state());
-          ut_ad(s > buf_page_t::FREED);
-          ut_ad(s < buf_page_t::READ_FIX);
-          if (block->page.oldest_modification() <= 1)
-          {
-            log_sys.latch.rd_lock(SRW_LOCK_CALL);
-            buf_pool.insert_into_flush_list(block,
-                                            log_sys.last_checkpoint_lsn);
-            log_sys.latch.rd_unlock();
-          }
-        }
+          insert_imported(block);
       }
 
       switch (type) {
@@ -637,8 +722,19 @@ void mtr_t::commit()
 
     if (m_made_dirty)
     {
-      Iterate<ReleaseModified> rm{ReleaseModified{lsns.first, m_commit_lsn}};
-      m_memo.for_each_block_in_reverse(rm);
+      mysql_mutex_lock(&buf_pool.flush_list_mutex);
+      {
+        CIterate<ReleaseModified> rm
+          {ReleaseModified{buf_pool.prepare_insert_into_flush_list(lsns.first),
+                           lsns.first, m_commit_lsn}};
+        m_memo.for_each_block_in_reverse(rm);
+        ut_ad(rm.functor.modified);
+        buf_pool.flush_list_requests+= rm.functor.modified;
+      }
+
+      buf_pool.page_cleaner_wakeup();
+      mysql_mutex_unlock(&buf_pool.flush_list_mutex);
+
       if (m_latch_ex)
       {
         log_sys.latch.wr_unlock();
@@ -646,15 +742,8 @@ void mtr_t::commit()
       }
       else
         log_sys.latch.rd_unlock();
-      m_memo.for_each_block_in_reverse(CIterate<ReleaseLatches>());
 
-      if (rm.functor.modified)
-      {
-        mysql_mutex_lock(&buf_pool.flush_list_mutex);
-        buf_pool.flush_list_requests+= rm.functor.modified;
-        buf_pool.page_cleaner_wakeup();
-        mysql_mutex_unlock(&buf_pool.flush_list_mutex);
-      }
+      m_memo.for_each_block_in_reverse(CIterate<ReleaseLatches>());
     }
     else
     {
@@ -774,9 +863,17 @@ void mtr_t::commit_shrink(fil_space_t &space)
   process_freed_pages();
 
   m_memo.for_each_block_in_reverse(CIterate<Shrink>{space});
-
-  m_memo.for_each_block_in_reverse(CIterate<const ReleaseModified>
-                                   (ReleaseModified{start_lsn, m_commit_lsn}));
+  mysql_mutex_lock(&buf_pool.flush_list_mutex);
+  {
+    CIterate<ReleaseModified> rm
+      {ReleaseModified{buf_pool.prepare_insert_into_flush_list(start_lsn),
+                       start_lsn, m_commit_lsn}};
+    m_memo.for_each_block_in_reverse(rm);
+    ut_ad(rm.functor.modified);
+    buf_pool.flush_list_requests+= rm.functor.modified;
+  }
+  buf_pool.page_cleaner_wakeup();
+  mysql_mutex_unlock(&buf_pool.flush_list_mutex);
   log_sys.latch.wr_unlock();
   m_latch_ex= false;
 

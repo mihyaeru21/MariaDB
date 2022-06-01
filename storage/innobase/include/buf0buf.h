@@ -1915,10 +1915,18 @@ public:
   void delete_from_flush_list(buf_page_t *bpage) noexcept
   { delete_from_flush_list(bpage, true); }
 
+  /** Prepare to insert a modified blcok into flush_list.
+  @param lsn start LSN of the mini-transaction
+  @return insert position for insert_into_flush_list() */
+  inline buf_page_t *prepare_insert_into_flush_list(lsn_t lsn) noexcept;
+
   /** Insert a modified block into the flush list.
+  @param prev     insert position (from prepare_insert_into_flush_list())
   @param block    modified block
-  @param lsn      start LSN of the mini-transaction that modified the block */
-  void insert_into_flush_list(buf_block_t *block, lsn_t lsn) noexcept;
+  @param lsn      start LSN of the mini-transaction that modified the block
+  @return whether the block was added */
+  inline bool insert_into_flush_list(buf_page_t *prev, buf_block_t *block,
+                                     lsn_t lsn) noexcept;
 
   /** Free a page whose underlying file page has been freed. */
   inline void release_freed_page(buf_page_t *bpage) noexcept;
