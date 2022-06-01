@@ -225,18 +225,19 @@ static void memo_slot_release(mtr_memo_slot_t *slot)
   default:
     buf_page_t *bpage= static_cast<buf_page_t*>(object);
     bpage->unfix();
-    switch (auto latch= slot->type & ~MTR_MEMO_MODIFY) {
+    switch (type) {
     case MTR_MEMO_PAGE_S_FIX:
       bpage->lock.s_unlock();
-      return;
-    case MTR_MEMO_PAGE_SX_FIX:
-    case MTR_MEMO_PAGE_X_FIX:
-      bpage->lock.u_or_x_unlock(latch == MTR_MEMO_PAGE_SX_FIX);
-      /* fall through */
+      break;
     case MTR_MEMO_BUF_FIX:
-      return;
+      break;
+    default:
+      ut_ad(type == MTR_MEMO_PAGE_SX_FIX ||
+            type == MTR_MEMO_PAGE_X_FIX ||
+            type == MTR_MEMO_PAGE_SX_MODIFY ||
+            type == MTR_MEMO_PAGE_X_MODIFY);
+      bpage->lock.u_or_x_unlock(type & MTR_MEMO_PAGE_SX_FIX);
     }
-    ut_ad("invalid type" == 0);
   }
 }
 
@@ -352,34 +353,28 @@ struct DebugCheck {
 };
 #endif
 
-/** Release page latches held by the mini-transaction. */
-struct ReleaseBlocks
+/** Update modified pages of the mini-transaction. */
+struct ReleaseModified
 {
   const lsn_t start, end;
   mutable size_t modified;
-  ReleaseBlocks(lsn_t start, lsn_t end) : start(start), end(end), modified(0)
+  ReleaseModified(lsn_t start, lsn_t end) : start(start), end(end), modified(0)
   {
-    ut_ad(!srv_read_only_mode);
     ut_ad(start);
     ut_ad(end);
   }
 
   /** @return true always */
-  bool operator()(mtr_memo_slot_t* slot) const
+  bool operator()(mtr_memo_slot_t *slot) const
   {
-    if (!slot->object)
+    if (!slot->object || !(slot->type & MTR_MEMO_MODIFY))
       return true;
-    switch (slot->type) {
-    case MTR_MEMO_PAGE_X_MODIFY:
-    case MTR_MEMO_PAGE_SX_MODIFY:
-      break;
-    default:
-      ut_ad(!(slot->type & MTR_MEMO_MODIFY));
-      return true;
-    }
+    ut_ad(slot->type == MTR_MEMO_PAGE_X_MODIFY ||
+          slot->type == MTR_MEMO_PAGE_SX_MODIFY);
 
     modified++;
     buf_block_t *b= static_cast<buf_block_t*>(slot->object);
+    ut_ad(b->page.id() < end_page_id);
     ut_d(const auto s= b->page.state());
     ut_ad(s > buf_page_t::FREED);
     ut_ad(s < buf_page_t::READ_FIX);
@@ -393,10 +388,147 @@ struct ReleaseBlocks
 
     if (oldest_modification > 1)
       ut_ad(oldest_modification <= start);
-    else if (fsp_is_system_temporary(b->page.id().space()))
-      b->page.set_temp_modified();
     else
       buf_pool.insert_into_flush_list(b, start);
+    return true;
+  }
+};
+
+/** Release latches to already dirtied pages.
+This is a bit more than ReleaseAll,
+kind of a combination of ReleaseLatches and a subset of ReleaseModified. */
+struct ReleaseSimple
+{
+  const lsn_t end;
+  mutable size_t modified;
+  ReleaseSimple(lsn_t end) : end(end), modified(0) { ut_ad(end); }
+
+  /** @return true always */
+  bool operator()(mtr_memo_slot_t *slot) const
+  {
+    void *object= slot->object;
+    if (!object)
+      return true;
+    slot->object= nullptr;
+    switch (const auto type= slot->type) {
+    case MTR_MEMO_S_LOCK:
+      static_cast<index_lock*>(object)->s_unlock();
+      break;
+    case MTR_MEMO_SPACE_X_LOCK:
+      static_cast<fil_space_t*>(object)->set_committed_size();
+      static_cast<fil_space_t*>(object)->x_unlock();
+      break;
+    case MTR_MEMO_SPACE_S_LOCK:
+      static_cast<fil_space_t*>(object)->s_unlock();
+      break;
+    case MTR_MEMO_X_LOCK:
+    case MTR_MEMO_SX_LOCK:
+      static_cast<index_lock*>(object)->
+        u_or_x_unlock(type == MTR_MEMO_SX_LOCK);
+      break;
+    default:
+      buf_page_t *bpage= static_cast<buf_page_t*>(object);
+      if (type & MTR_MEMO_MODIFY)
+      {
+        ut_ad(slot->type == MTR_MEMO_PAGE_X_MODIFY ||
+              slot->type == MTR_MEMO_PAGE_SX_MODIFY);
+        ut_ad(bpage->oldest_modification() > 1);
+        ut_ad(bpage->oldest_modification() < end);
+        ut_ad(bpage->id() < end_page_id);
+        ut_d(const auto s= bpage->state());
+        ut_ad(s > buf_page_t::FREED);
+        ut_ad(s < buf_page_t::READ_FIX);
+        ut_ad(mach_read_from_8(bpage->frame + FIL_PAGE_LSN) <= end);
+        mach_write_to_8(bpage->frame + FIL_PAGE_LSN, end);
+        if (UNIV_LIKELY_NULL(bpage->zip.data))
+          memcpy_aligned<8>(FIL_PAGE_LSN + bpage->zip.data,
+                            FIL_PAGE_LSN + bpage->frame, 8);
+        modified++;
+      }
+      bpage->unfix();
+      switch (auto latch= type & ~MTR_MEMO_MODIFY) {
+      case MTR_MEMO_PAGE_S_FIX:
+        bpage->lock.s_unlock();
+        return true;
+      case MTR_MEMO_PAGE_SX_FIX:
+      case MTR_MEMO_PAGE_X_FIX:
+        bpage->lock.u_or_x_unlock(latch == MTR_MEMO_PAGE_SX_FIX);
+        /* fall through */
+      case MTR_MEMO_BUF_FIX:
+        return true;
+      }
+      ut_ad("invalid type" == 0);
+    }
+    return true;
+  }
+};
+
+/** Release latches to already pages when no log was written.
+This is like ReleaseSimple, but it cover pages of the temporary tablespace
+as well as pages modified during IMPORT TABLESPACE. */
+struct ReleaseUnlogged
+{
+  /** @return true always */
+  bool operator()(mtr_memo_slot_t *slot) const
+  {
+    void *object= slot->object;
+    if (!object)
+      return true;
+    slot->object= nullptr;
+    switch (const auto type= slot->type) {
+    case MTR_MEMO_S_LOCK:
+      static_cast<index_lock*>(object)->s_unlock();
+      break;
+    case MTR_MEMO_SPACE_X_LOCK:
+      static_cast<fil_space_t*>(object)->set_committed_size();
+      static_cast<fil_space_t*>(object)->x_unlock();
+      break;
+    case MTR_MEMO_SPACE_S_LOCK:
+      static_cast<fil_space_t*>(object)->s_unlock();
+      break;
+    case MTR_MEMO_X_LOCK:
+    case MTR_MEMO_SX_LOCK:
+      static_cast<index_lock*>(object)->
+        u_or_x_unlock(type == MTR_MEMO_SX_LOCK);
+      break;
+    default:
+      buf_block_t *block= static_cast<buf_block_t*>(object);
+      block->page.unfix();
+
+      if (type & MTR_MEMO_MODIFY)
+      {
+        ut_ad(type == MTR_MEMO_PAGE_X_MODIFY ||
+              type == MTR_MEMO_PAGE_SX_MODIFY);
+        if (UNIV_LIKELY(block->page.id() >= end_page_id))
+          block->page.set_temp_modified();
+        else
+        {
+          ut_d(const auto s= block->page.state());
+          ut_ad(s > buf_page_t::FREED);
+          ut_ad(s < buf_page_t::READ_FIX);
+          if (block->page.oldest_modification() <= 1)
+          {
+            log_sys.latch.rd_lock(SRW_LOCK_CALL);
+            buf_pool.insert_into_flush_list(block,
+                                            log_sys.last_checkpoint_lsn);
+            log_sys.latch.rd_unlock();
+          }
+        }
+      }
+
+      switch (type) {
+      case MTR_MEMO_PAGE_S_FIX:
+        block->page.lock.s_unlock();
+        break;
+      case MTR_MEMO_BUF_FIX:
+        break;
+      default:
+        ut_ad(type == MTR_MEMO_PAGE_SX_FIX || type == MTR_MEMO_PAGE_X_FIX ||
+              type == MTR_MEMO_PAGE_SX_MODIFY ||
+              type == MTR_MEMO_PAGE_X_MODIFY);
+        block->page.lock.u_or_x_unlock(type & MTR_MEMO_PAGE_SX_FIX);
+      }
+    }
     return true;
   }
 };
@@ -441,6 +573,45 @@ inline void mtr_t::release_resources()
   ut_d(m_commit= true);
 }
 
+/** Handle any pages that were freed during the mini-transaction. */
+void mtr_t::process_freed_pages()
+{
+  if (m_freed_pages)
+  {
+    ut_ad(!m_freed_pages->empty());
+    ut_ad(m_freed_space);
+    ut_ad(memo_contains(*m_freed_space));
+    ut_ad(m_freed_space->is_owner());
+    ut_ad(is_named_space(m_freed_space));
+
+    /* Update the last freed lsn */
+    m_freed_space->freed_range_mutex.lock();
+    m_freed_space->update_last_freed_lsn(m_commit_lsn);
+    if (!m_trim_pages)
+      for (const auto &range : *m_freed_pages)
+        m_freed_space->add_free_range(range);
+    else
+      m_freed_space->clear_freed_ranges();
+    m_freed_space->freed_range_mutex.unlock();
+
+    delete m_freed_pages;
+    m_freed_pages= nullptr;
+    m_freed_space= nullptr;
+    /* mtr_t::start() will reset m_trim_pages */
+  }
+  else
+    ut_ad(!m_freed_space);
+}
+
+/** Release modified pages when no log was written. */
+void mtr_t::release_unlogged()
+{
+  ut_ad(m_log_mode == MTR_LOG_NO_REDO);
+  ut_ad(m_log.size() == 0);
+  process_freed_pages();
+  m_memo.for_each_block_in_reverse(CIterate<ReleaseUnlogged>());
+}
+
 /** Commit a mini-transaction. */
 void mtr_t::commit()
 {
@@ -454,81 +625,58 @@ void mtr_t::commit()
 
   if (m_modifications && (m_log_mode == MTR_LOG_NO_REDO || !m_log.empty()))
   {
-    ut_ad(!srv_read_only_mode || m_log_mode == MTR_LOG_NO_REDO);
-
-    std::pair<lsn_t,page_flush_ahead> lsns;
-
-    if (UNIV_LIKELY(m_log_mode == MTR_LOG_ALL))
+    if (UNIV_UNLIKELY(m_log_mode != MTR_LOG_ALL))
     {
-      lsns= do_write();
-      if (m_made_dirty);
-      else if (m_latch_ex)
+      release_unlogged();
+      goto func_exit;
+    }
+
+    ut_ad(!srv_read_only_mode);
+    std::pair<lsn_t,page_flush_ahead> lsns{do_write()};
+    process_freed_pages();
+
+    if (m_made_dirty)
+    {
+      Iterate<ReleaseModified> rm{ReleaseModified{lsns.first, m_commit_lsn}};
+      m_memo.for_each_block_in_reverse(rm);
+      if (m_latch_ex)
       {
         log_sys.latch.wr_unlock();
         m_latch_ex= false;
       }
       else
         log_sys.latch.rd_unlock();
+      m_memo.for_each_block_in_reverse(CIterate<ReleaseLatches>());
+
+      if (rm.functor.modified)
+      {
+        mysql_mutex_lock(&buf_pool.flush_list_mutex);
+        buf_pool.flush_list_requests+= rm.functor.modified;
+        buf_pool.page_cleaner_wakeup();
+        mysql_mutex_unlock(&buf_pool.flush_list_mutex);
+      }
     }
     else
     {
-      ut_ad(m_log_mode == MTR_LOG_NO_REDO);
-      ut_ad(m_log.size() == 0);
-      m_commit_lsn= log_sys.get_lsn();
-      lsns= { m_commit_lsn, PAGE_FLUSH_NO };
-      if (UNIV_UNLIKELY(m_made_dirty)) /* This should be IMPORT TABLESPACE */
-        log_sys.latch.rd_lock(SRW_LOCK_CALL);
-    }
-
-    if (m_freed_pages)
-    {
-      ut_ad(!m_freed_pages->empty());
-      ut_ad(m_freed_space);
-      ut_ad(m_freed_space->is_owner());
-      ut_ad(is_named_space(m_freed_space));
-      /* Update the last freed lsn */
-      m_freed_space->update_last_freed_lsn(m_commit_lsn);
-
-      if (!is_trim_pages())
-        for (const auto &range : *m_freed_pages)
-          m_freed_space->add_free_range(range);
+      if (m_latch_ex)
+      {
+        log_sys.latch.wr_unlock();
+        m_latch_ex= false;
+      }
       else
-        m_freed_space->clear_freed_ranges();
-      delete m_freed_pages;
-      m_freed_pages= nullptr;
-      m_freed_space= nullptr;
-      /* mtr_t::start() will reset m_trim_pages */
+        log_sys.latch.rd_unlock();
+      Iterate<ReleaseSimple> rs{ReleaseSimple{m_commit_lsn}};
+      m_memo.for_each_block_in_reverse(rs);
+      buf_pool.add_flush_list_requests(rs.functor.modified);
     }
-    else
-      ut_ad(!m_freed_space);
-
-    Iterate<ReleaseBlocks> rb{ReleaseBlocks{lsns.first, m_commit_lsn}};
-    m_memo.for_each_block_in_reverse(rb);
-    if (!m_made_dirty);
-    else if (m_latch_ex)
-    {
-      log_sys.latch.wr_unlock();
-      m_latch_ex= false;
-    }
-    else
-      log_sys.latch.rd_unlock();
-
-    m_memo.for_each_block_in_reverse(CIterate<ReleaseLatches>());
 
     if (UNIV_UNLIKELY(lsns.second != PAGE_FLUSH_NO))
       buf_flush_ahead(m_commit_lsn, lsns.second == PAGE_FLUSH_SYNC);
-
-    if (rb.functor.modified)
-    {
-      mysql_mutex_lock(&buf_pool.flush_list_mutex);
-      buf_pool.flush_list_requests+= rb.functor.modified;
-      buf_pool.page_cleaner_wakeup();
-      mysql_mutex_unlock(&buf_pool.flush_list_mutex);
-    }
   }
   else
     m_memo.for_each_block_in_reverse(CIterate<ReleaseAll>());
 
+func_exit:
   release_resources();
 }
 
@@ -622,31 +770,13 @@ void mtr_t::commit_shrink(fil_space_t &space)
   os_file_truncate(space.chain.start->name, space.chain.start->handle,
                    os_offset_t{space.size} << srv_page_size_shift, true);
 
-  if (m_freed_pages)
-  {
-    ut_ad(!m_freed_pages->empty());
-    ut_ad(m_freed_space == &space);
-    ut_ad(memo_contains(*m_freed_space));
-    ut_ad(is_named_space(m_freed_space));
-    m_freed_space->update_last_freed_lsn(m_commit_lsn);
-
-    if (!is_trim_pages())
-      for (const auto &range : *m_freed_pages)
-        m_freed_space->add_free_range(range);
-    else
-      m_freed_space->clear_freed_ranges();
-    delete m_freed_pages;
-    m_freed_pages= nullptr;
-    m_freed_space= nullptr;
-    /* mtr_t::start() will reset m_trim_pages */
-  }
-  else
-    ut_ad(!m_freed_space);
+  ut_ad(!m_freed_pages || m_freed_space == &space);
+  process_freed_pages();
 
   m_memo.for_each_block_in_reverse(CIterate<Shrink>{space});
 
-  m_memo.for_each_block_in_reverse(CIterate<const ReleaseBlocks>
-                                   (ReleaseBlocks{start_lsn, m_commit_lsn}));
+  m_memo.for_each_block_in_reverse(CIterate<const ReleaseModified>
+                                   (ReleaseModified{start_lsn, m_commit_lsn}));
   log_sys.latch.wr_unlock();
   m_latch_ex= false;
 

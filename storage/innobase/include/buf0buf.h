@@ -829,7 +829,7 @@ public:
   {
     ut_ad(fsp_is_system_temporary(id().space()));
     ut_ad(in_file());
-    ut_ad(!oldest_modification());
+    ut_ad(!oldest_modification() || oldest_modification() == 2);
     oldest_modification_= 2;
   }
 
@@ -1764,8 +1764,11 @@ public:
   /** modified blocks (a subset of LRU) */
   UT_LIST_BASE_NODE_T(buf_page_t) flush_list;
   /** number of blocks ever added to flush_list;
-  protected by flush_list_mutex */
+  sometimes protected by flush_list_mutex */
   size_t flush_list_requests;
+
+  TPOOL_SUPPRESS_TSAN void add_flush_list_requests(size_t size)
+  { ut_ad(size); flush_list_requests+= size; }
 private:
   /** whether the page cleaner needs wakeup from indefinite sleep */
   bool page_cleaner_is_idle;
